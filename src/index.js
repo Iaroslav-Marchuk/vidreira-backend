@@ -1,7 +1,27 @@
-import setupServer from './server.js';
+import express from 'express';
+import pino from 'pino-http';
+import cors from 'cors';
 
-const bootstrap = async () => {
-  setupServer();
-};
+import usersRoutes from './routers/usersRoutes.js';
+import { errorHandler } from './middlewares/errorHandler.js';
+import { notFoundHandler } from './middlewares/notFoundHandler.js';
 
-bootstrap();
+const app = express();
+
+app.use(express.json());
+app.use(cors());
+
+app.use(
+  pino({
+    transport: {
+      target: 'pino-pretty',
+    },
+  }),
+);
+
+app.use('/users', usersRoutes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+export default app;
