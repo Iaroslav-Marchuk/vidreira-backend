@@ -1,0 +1,23 @@
+[
+  {
+    "name": "andrii",
+    "role": "duplo",
+    "password": "1234",
+    "createdAt": { "$date": "2025-07-08T20:00:00.000Z" },
+    "updatedAt": { "$date": "2025-07-08T20:00:00.000Z" }
+  },
+  {
+    "name": "svitlana",
+    "role": "corte",
+    "password": "5678",
+    "createdAt": { "$date": "2025-07-08T20:01:00.000Z" },
+    "updatedAt": { "$date": "2025-07-08T20:01:00.000Z" }
+  },
+  {
+    "name": "ivan",
+    "role": "visitante",
+    "password": "9999",
+    "createdAt": { "$date": "2025-07-08T20:02:00.000Z" },
+    "updatedAt": { "$date": "2025-07-08T20:02:00.000Z" }
+  }
+]
