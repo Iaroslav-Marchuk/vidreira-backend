@@ -35,3 +35,5 @@ export async function registerUserController(req, res) {
     res.status(500).json({ message: 'Server error!' });
   }
 }
+
+export async function logOutUserController(res, req) {}
