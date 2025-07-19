@@ -1,4 +1,4 @@
-import { User } from '../models/users.js';
+import { User } from '../models/user.model.js';
 import { existingUser } from '../services/user.services.js';
 
 export async function registerUserController(req, res) {

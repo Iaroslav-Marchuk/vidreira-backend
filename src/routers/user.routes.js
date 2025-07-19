@@ -3,7 +3,7 @@ import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import {
   logOutUserController,
   registerUserController,
-} from '../controllers/users.controller.js';
+} from '../controllers/users.controllers.js';
 
 const router = Router();
 
