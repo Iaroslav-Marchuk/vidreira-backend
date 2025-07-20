@@ -1,7 +1,32 @@
+import { SORT_ORDER } from '../constants/constants.js';
 import { OrderModel } from '../models/order.model.js';
+import { calculatePaginationData } from '../utils/calculatePaginationData.js';
 
-export const getAllOrdersService = () => {
-  return OrderModel.find();
+export const getAllOrdersService = async ({
+  page = 1,
+  perPage = 10,
+  sortBy = 'createdAt',
+  sortOrder = SORT_ORDER.ASC,
+  filter = {},
+}) => {
+  const limit = perPage;
+  const skip = (page - 1) * perPage;
+
+  const orderQuery = OrderModel.find(filter);
+  const countOrders = await OrderModel.find()
+    .merge(orderQuery)
+    .countDocuments();
+  const orders = await orderQuery
+    .skip(skip)
+    .limit(limit)
+    .sort({ [sortBy]: sortOrder });
+
+  const paginationData = calculatePaginationData(countOrders, page, perPage);
+
+  return {
+    data: orders,
+    ...paginationData,
+  };
 };
 
 export const getOrderByIdService = (orderId) => {

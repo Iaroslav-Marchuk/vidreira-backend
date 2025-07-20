@@ -7,9 +7,22 @@ import {
   replaceOrderService,
   updateOrderService,
 } from '../services/order.services.js';
+import { parsePaginationParams } from '../utils/parsePaginationParams.js';
+import { parseSortParams } from '../utils/parseSortParams.js';
+import { parseFilterParams } from '../utils/parseFilterParams.js';
 
 export const getAllOrdersController = async (req, res) => {
-  const orders = await getAllOrdersService();
+  const { page, perPage } = parsePaginationParams(req.query);
+  const { sortBy, sortOrder } = parseSortParams(req.query);
+  const filter = parseFilterParams(req.query);
+
+  const orders = await getAllOrdersService({
+    page,
+    perPage,
+    sortBy,
+    sortOrder,
+    filter,
+  });
   res.json({
     status: 200,
     message: 'Succsessfully found orders!',

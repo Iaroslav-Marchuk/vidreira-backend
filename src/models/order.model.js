@@ -2,10 +2,13 @@ import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema(
   {
-    status: {
+    EP: {
+      type: Number,
+      required: true,
+    },
+    cliente: {
       type: String,
-      required: false,
-      enum: ['created', 'inProgress', 'completed'],
+      required: true,
     },
     local: {
       zona: {
@@ -18,19 +21,16 @@ const orderSchema = new mongoose.Schema(
         required: true,
       },
     },
-    EP: {
-      type: Number,
-      required: true,
-    },
-    cliente: {
+    status: {
       type: String,
-      required: true,
+      required: false,
+      enum: ['created', 'inProgress', 'completed'],
     },
     history: {
       type: [String],
       required: false,
     },
-    uitems: [
+    items: [
       {
         category: {
           type: String,

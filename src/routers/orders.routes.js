@@ -10,19 +10,39 @@ import {
 } from '../controllers/orders.controllers.js';
 
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
+import { validateBody } from '../middlewares/validateBody.js';
+import {
+  createOrderSchema,
+  updateOrderSchema,
+} from '../validation/order.validarion.js';
+import { isValidId } from '../middlewares/isValidId.js';
 
 const orderRouter = Router();
 
 orderRouter.get('/', ctrlWrapper(getAllOrdersController));
 
-orderRouter.get('/:orderId', ctrlWrapper(getOrderByIdController));
+orderRouter.get('/:orderId', isValidId, ctrlWrapper(getOrderByIdController));
 
-orderRouter.post('/', ctrlWrapper(createOrderController));
+orderRouter.post(
+  '/',
+  validateBody(createOrderSchema),
+  ctrlWrapper(createOrderController),
+);
 
-orderRouter.patch('/:orderId', ctrlWrapper(updateOrderController));
+orderRouter.patch(
+  '/:orderId',
+  isValidId,
+  validateBody(updateOrderSchema),
+  ctrlWrapper(updateOrderController),
+);
 
-orderRouter.put('/:orderId', ctrlWrapper(replaceOrderController));
+orderRouter.put(
+  '/:orderId',
+  isValidId,
+  validateBody(createOrderSchema),
+  ctrlWrapper(replaceOrderController),
+);
 
-orderRouter.delete('/:orderId', ctrlWrapper(deleteOrderController));
+orderRouter.delete('/:orderId', isValidId, ctrlWrapper(deleteOrderController));
 
 export default orderRouter;
