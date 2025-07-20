@@ -5,10 +5,10 @@ import {
   registerUserController,
 } from '../controllers/users.controllers.js';
 
-const router = Router();
+const userRouter = Router();
 
-router.post('/register', ctrlWrapper(registerUserController));
+userRouter.post('/register', ctrlWrapper(registerUserController));
 
-router.post('/logout', ctrlWrapper(logOutUserController));
+userRouter.post('/logout', ctrlWrapper(logOutUserController));
 
-export default router;
+export default userRouter;

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
 import app from './index.js';
+
 import { initDatabaseConection } from './db/db.js';
 
 import { getEnvVariable } from './utils/getEnvVariable.js';

@@ -57,9 +57,10 @@ export const updateOrderController = async (req, res) => {
   });
 };
 
-export const replaceOrderController = async (req, res) => {
+export const replaceOrderController = async (req, res, next) => {
   const { orderId } = req.params;
-  const { replacedOrder, updatedExisting } = await replaceOrderService(
+
+  const { upsertedOrder, updatedExisting } = await replaceOrderService(
     orderId,
     req.body,
   );
@@ -67,38 +68,17 @@ export const replaceOrderController = async (req, res) => {
   if (updatedExisting === true) {
     return res.json({
       status: 200,
-      message: 'Order replaced successfully',
-      data: replacedOrder,
+      message: 'Successfully upserted order!',
+      data: upsertedOrder,
     });
   }
 
-  res.json({
+  res.status(201).json({
     status: 201,
     message: 'Successfully created new order!',
-    data: replacedOrder,
+    data: upsertedOrder,
   });
 };
-
-// export const upsertStudentController = async (req, res, next) => {
-//   const { studentId } = req.params;
-
-//   const result = await updateStudent(studentId, req.body, {
-//     upsert: true,
-//   });
-
-//   if (!result) {
-//     next(createHttpError(404, 'Student not found'));
-//     return;
-//   }
-
-//   const status = result.isNew ? 201 : 200;
-
-//   res.status(status).json({
-//     status,
-//     message: `Successfully upserted a student!`,
-//     data: result.student,
-//   });
-// };
 
 export const deleteOrderController = async (req, res) => {
   const { orderId } = req.params;

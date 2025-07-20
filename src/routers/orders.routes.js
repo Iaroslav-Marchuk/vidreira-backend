@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import {
   createOrderController,
   deleteOrderController,
@@ -8,18 +9,20 @@ import {
   updateOrderController,
 } from '../controllers/orders.controllers.js';
 
-const router = Router();
+import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 
-router.get('/', getAllOrdersController);
+const orderRouter = Router();
 
-router.get('/:orderId', getOrderByIdController);
+orderRouter.get('/', ctrlWrapper(getAllOrdersController));
 
-router.post('/', createOrderController);
+orderRouter.get('/:orderId', ctrlWrapper(getOrderByIdController));
 
-router.patch('/:orderId', updateOrderController);
+orderRouter.post('/', ctrlWrapper(createOrderController));
 
-router.put('/:orderId', replaceOrderController);
+orderRouter.patch('/:orderId', ctrlWrapper(updateOrderController));
 
-router.delete('/:orderId', deleteOrderController);
+orderRouter.put('/:orderId', ctrlWrapper(replaceOrderController));
 
-export default router;
+orderRouter.delete('/:orderId', ctrlWrapper(deleteOrderController));
+
+export default orderRouter;

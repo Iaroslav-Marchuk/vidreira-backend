@@ -17,36 +17,17 @@ export const updateOrderService = (orderId, payload) => {
 };
 
 export const replaceOrderService = async (orderId, payload) => {
-  const result = await OrderModel.findByIdAndUpdate(orderId, payload, {
+  const result = await OrderModel.findOneAndUpdate({ _id: orderId }, payload, {
     new: true,
     upsert: true,
     includeResultMetadata: true,
   });
 
   return {
-    replacedOrder: result.value,
+    upsertedOrder: result.value,
     updatedExisting: result.lastErrorObject.updatedExisting,
   };
 };
-
-// export const updateStudent = async (studentId, payload, options = {}) => {
-//   const rawResult = await StudentsCollection.findOneAndUpdate(
-//     { _id: studentId },
-//     payload,
-//     {
-//       new: true,
-//       includeResultMetadata: true,
-//       ...options,
-//     },
-//   );
-
-//   if (!rawResult || !rawResult.value) return null;
-
-//   return {
-//     student: rawResult.value,
-//     isNew: Boolean(rawResult?.lastErrorObject?.upserted),
-//   };
-// };
 
 export const deleteOrderService = (orderId) => {
   return OrderModel.findByIdAndDelete(orderId);
