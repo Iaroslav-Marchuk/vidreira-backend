@@ -17,32 +17,32 @@ import {
 } from '../validation/order.validarion.js';
 import { isValidId } from '../middlewares/isValidId.js';
 
-const orderRouter = Router();
+const router = Router();
 
-orderRouter.get('/', ctrlWrapper(getAllOrdersController));
+router.get('/', ctrlWrapper(getAllOrdersController));
 
-orderRouter.get('/:orderId', isValidId, ctrlWrapper(getOrderByIdController));
+router.get('/:orderId', isValidId, ctrlWrapper(getOrderByIdController));
 
-orderRouter.post(
+router.post(
   '/',
   validateBody(createOrderSchema),
   ctrlWrapper(createOrderController),
 );
 
-orderRouter.patch(
+router.patch(
   '/:orderId',
   isValidId,
   validateBody(updateOrderSchema),
   ctrlWrapper(updateOrderController),
 );
 
-orderRouter.put(
+router.put(
   '/:orderId',
   isValidId,
   validateBody(createOrderSchema),
   ctrlWrapper(replaceOrderController),
 );
 
-orderRouter.delete('/:orderId', isValidId, ctrlWrapper(deleteOrderController));
+router.delete('/:orderId', isValidId, ctrlWrapper(deleteOrderController));
 
-export default orderRouter;
+export default router;

@@ -2,8 +2,7 @@ import express from 'express';
 import pino from 'pino-http';
 import cors from 'cors';
 
-import usersRoutes from './routers/users.routes.js';
-import ordersRoutes from './routers/orders.routes.js';
+import router from './routers/index.js';
 
 import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
@@ -21,8 +20,7 @@ app.use(
   }),
 );
 
-app.use('/users', usersRoutes);
-app.use('/orders', ordersRoutes);
+app.use(router);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
