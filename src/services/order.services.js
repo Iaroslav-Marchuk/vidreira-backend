@@ -12,10 +12,16 @@ export const getAllOrdersService = async ({
   const limit = perPage;
   const skip = (page - 1) * perPage;
 
-  const orderQuery = OrderModel.find(filter);
-  const countOrders = await OrderModel.find()
-    .merge(orderQuery)
-    .countDocuments();
+  // const orderQuery = OrderModel.find(filter);
+  // // const countOrders = await OrderModel.find()
+  // //   .merge(orderQuery)
+  // //   .countDocuments();
+
+  // const countOrders = await OrderModel.countDocuments(orderQuery.getQuery());
+
+  const orderQuery = OrderModel.find({}); // Без filter
+  const countOrders = await OrderModel.countDocuments({});
+
   const orders = await orderQuery
     .skip(skip)
     .limit(limit)

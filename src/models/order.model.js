@@ -23,8 +23,8 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      required: false,
       enum: ['created', 'inProgress', 'completed'],
+      default: 'created',
     },
     history: {
       type: [String],

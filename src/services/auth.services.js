@@ -21,7 +21,7 @@ export const registerUserService = async ({ name, role, password }) => {
 export const loginUserService = async ({ name, password }) => {
   const user = await UserModel.findOne({ name: name });
   if (!user) {
-    throw createHttpError(401, 'User not found!');
+    throw createHttpError(404, 'User not found!');
   }
 
   const isEqual = await bcrypt.compare(password, user.password);
@@ -41,4 +41,8 @@ export const loginUserService = async ({ name, password }) => {
     accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
     refreshTokenValidUntil: new Date(Date.now() + ONE_DAY),
   });
+};
+
+export const logoutUserService = async (sessionId) => {
+  await SessionModel.deleteOne({ _id: sessionId });
 };
