@@ -26,10 +26,7 @@ const orderSchema = new mongoose.Schema(
       enum: ['created', 'inProgress', 'completed'],
       default: 'created',
     },
-    history: {
-      type: [String],
-      required: false,
-    },
+
     items: [
       {
         category: {
@@ -73,4 +70,4 @@ const orderSchema = new mongoose.Schema(
   },
 );
 
-export const OrderModel = mongoose.model('Order', orderSchema);
+export const OrderModel = mongoose.model('orders', orderSchema);

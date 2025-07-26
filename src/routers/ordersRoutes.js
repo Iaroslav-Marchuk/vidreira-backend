@@ -7,14 +7,14 @@ import {
   getOrderByIdController,
   replaceOrderController,
   updateOrderController,
-} from '../controllers/orders.controllers.js';
+} from '../controllers/ordersControllers.js';
 
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import { validateBody } from '../middlewares/validateBody.js';
 import {
   createOrderSchema,
   updateOrderSchema,
-} from '../validation/order.validarion.js';
+} from '../validation/orderValidarion.js';
 import { isValidId } from '../middlewares/isValidId.js';
 
 const router = Router();

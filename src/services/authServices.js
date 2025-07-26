@@ -2,8 +2,8 @@ import createHttpError from 'http-errors';
 import bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 
-import { UserModel } from '../models/user.model.js';
-import { SessionModel } from '../models/session.model.js';
+import { UserModel } from '../models/userModel.js';
+import { SessionModel } from '../models/sessionModel.js';
 import { FIFTEEN_MINUTES, ONE_DAY } from '../constants/constants.js';
 
 export const registerUserService = async ({ name, role, password }) => {
