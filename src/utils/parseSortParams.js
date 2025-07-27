@@ -1,21 +1,19 @@
-function parseSortBy(value) {
-  if (typeof value === 'undefined') {
-    return '_id';
-  }
-  const keys = ['_id', 'EP', 'zona', 'createdAt', 'updatedAt', 'status'];
+const keys = ['_id', 'EP', 'zona', 'createdAt', 'status'];
 
-  if (keys.includes(value !== true)) {
+function parseSortBy(sortBy) {
+  if (typeof sortBy === 'undefined') {
     return 'createdAt';
   }
-  return value;
+
+  return keys.includes(sortBy) ? sortBy : 'createdAt';
 }
 
-function parseSortOrder(value) {
-  if (typeof value === 'undefined') {
+function parseSortOrder(sortOrder) {
+  if (typeof sortOrder === 'undefined') {
     return 'asc';
   }
 
-  return value === 'desc' ? 'desc' : 'asc';
+  return sortOrder === 'desc' ? 'desc' : 'asc';
 }
 
 export const parseSortParams = (query) => {

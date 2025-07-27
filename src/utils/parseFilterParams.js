@@ -1,3 +1,6 @@
+const ZONAS = ['L1', 'L2', 'L3'];
+const STATUSES = ['created', 'inProgress', 'completed'];
+
 function parseNumber(value) {
   const isString = typeof value === 'string';
   if (!isString) return;
@@ -6,38 +9,35 @@ function parseNumber(value) {
   if (Number.isNaN(parsedNumber)) {
     return;
   }
+  return parsedNumber;
 }
 
-function parseZona(value) {
-  const isString = typeof value === 'string';
+function parseZona(zona) {
+  const isString = typeof zona === 'string';
   if (!isString) return;
 
-  const isZona = (value) => {
-    ['L1', 'L2', 'L3'].includes(value);
-  };
+  const isZona = (zona) => ZONAS.includes(zona);
 
-  if (isZona(value)) return value;
+  if (isZona(zona)) return zona;
 }
 
-function parseStatus(value) {
-  const isString = typeof value === 'string';
+function parseStatus(status) {
+  const isString = typeof status === 'string';
   if (!isString) return;
 
-  const isStatus = (value) => {
-    ['created', 'inProgress', 'completed'].includes(value);
-  };
+  const isStatus = (status) => STATUSES.includes(status);
 
-  if (isStatus(value)) return value;
+  if (isStatus(status)) return status;
 }
 
-function parseIsTemper(value) {
-  if (value === 'true') return true;
-  if (value === 'false') return false;
+function parseIsTemper(temper) {
+  if (temper === 'true') return true;
+  if (temper === 'false') return false;
   return undefined;
 }
 
-const parseDate = (value) => {
-  const date = new Date(value);
+const parseDate = (dateValue) => {
+  const date = new Date(dateValue);
   return isNaN(date.getTime()) ? undefined : date;
 };
 
@@ -53,7 +53,6 @@ export const parseFilterParams = (query) => {
     temper,
     sizeZ,
     createdAt,
-    updatedAt,
   } = query;
 
   const parsedEP = parseNumber(EP);
@@ -66,7 +65,6 @@ export const parseFilterParams = (query) => {
   const parsedTemper = parseIsTemper(temper);
   const parsedSizeZ = parseNumber(sizeZ);
   const parsedCreatedAt = parseDate(createdAt);
-  const parsedUpdatedAt = parseDate(updatedAt);
 
   return {
     EP: parsedEP,
@@ -79,6 +77,5 @@ export const parseFilterParams = (query) => {
     temper: parsedTemper,
     sizeZ: parsedSizeZ,
     createdAt: parsedCreatedAt,
-    updatedAt: parsedUpdatedAt,
   };
 };

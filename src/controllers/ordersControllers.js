@@ -10,39 +10,28 @@ import {
 } from '../services/orderServices.js';
 
 import { parsePaginationParams } from '../utils/parsePaginationParams.js';
+import { parseSortParams } from '../utils/parseSortParams.js';
+import { parseFilterParams } from '../utils/parseFilterParams.js';
 
 export const getAllOrdersController = async (req, res) => {
   const { page, perPage } = parsePaginationParams(req.query);
-  const orders = await getAllOrdersService({ page, perPage });
+  const { sortBy, sortOrder } = parseSortParams(req.query);
+  const filter = parseFilterParams(req.query);
+
+  const orders = await getAllOrdersService({
+    page,
+    perPage,
+    sortBy,
+    sortOrder,
+    filter,
+  });
+
   res.status(200).json({
     status: 200,
     message: 'Succsessfully found orders!',
     data: orders,
   });
 };
-
-// import { parsePaginationParams } from '../utils/parsePaginationParams.js';
-// import { parseSortParams } from '../utils/parseSortParams.js';
-// import { parseFilterParams } from '../utils/parseFilterParams.js';
-
-// export const getAllOrdersController = async (req, res) => {
-//   const { page, perPage } = parsePaginationParams(req.query);
-//   const { sortBy, sortOrder } = parseSortParams(req.query);
-//   const filter = parseFilterParams(req.query);
-
-//   const orders = await getAllOrdersService({
-//     page,
-//     perPage,
-//     sortBy,
-//     sortOrder,
-//     filter,
-//   });
-//   res.json({
-//     status: 200,
-//     message: 'Succsessfully found orders!',
-//     data: orders,
-//   });
-// };
 
 export const getOrderByIdController = async (req, res) => {
   const { orderId } = req.params;

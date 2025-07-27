@@ -1,16 +1,31 @@
 import { OrderModel } from '../models/orderModel.js';
 import { calculatePaginationData } from '../utils/calculatePaginationData.js';
+import { SORT_ORDER } from '../constants/constants.js';
 
-export const getAllOrdersService = async ({ page, perPage }) => {
+export const getAllOrdersService = async ({
+  page,
+  perPage,
+  sortBy = 'createdAt',
+  sortOrder = SORT_ORDER.ASC,
+  filter = {},
+}) => {
   const limitValue = perPage;
   const skipValue = (page - 1) * perPage;
 
-  const ordersQuery = OrderModel.find();
-  const ordersCount = await OrderModel.find()
+  const cleanFilter = Object.fromEntries(
+    Object.entries(filter).filter(([, value]) => value !== undefined),
+  );
+
+  const ordersQuery = OrderModel.find(cleanFilter);
+
+  const ordersCount = await OrderModel.find(cleanFilter)
     .merge(ordersQuery)
     .countDocuments();
 
-  const orders = await ordersQuery.skip(skipValue).limit(limitValue);
+  const orders = await ordersQuery
+    .skip(skipValue)
+    .limit(limitValue)
+    .sort({ [sortBy]: sortOrder });
 
   const paginationData = calculatePaginationData(ordersCount, page, perPage);
 
