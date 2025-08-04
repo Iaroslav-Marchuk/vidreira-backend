@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { ROLES } from '../constants/constants.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -10,7 +11,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ['duplo', 'corte', 'visitante'],
+      enum: Object.values(ROLES),
     },
     password: {
       type: String,

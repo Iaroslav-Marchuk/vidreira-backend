@@ -7,6 +7,7 @@ import {
   getOrderByIdService,
   replaceOrderService,
   updateOrderService,
+  updateStatusService,
 } from '../services/orderServices.js';
 
 import { parsePaginationParams } from '../utils/parsePaginationParams.js';
@@ -105,5 +106,24 @@ export const updateOrderController = async (req, res, next) => {
     status: 200,
     message: 'Successfully patched order!',
     data: updatedValue,
+  });
+};
+
+export const updateStatusController = async (req, res, next) => {
+  const { orderId } = req.params;
+  const { status: newStatus } = req.body;
+  const { role } = req.user;
+
+  const updatedOrder = await updateStatusService(orderId, role, newStatus);
+
+  if (!updatedOrder) {
+    next(createHttpError(404, 'Order not found'));
+    return;
+  }
+
+  res.json({
+    status: 200,
+    message: 'Successfully updated status!',
+    data: updatedOrder,
   });
 };

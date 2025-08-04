@@ -1,6 +1,7 @@
 import { OrderModel } from '../models/orderModel.js';
 import { calculatePaginationData } from '../utils/calculatePaginationData.js';
 import { SORT_ORDER } from '../constants/constants.js';
+import createHttpError from 'http-errors';
 
 export const getAllOrdersService = async ({
   page,
@@ -31,41 +32,6 @@ export const getAllOrdersService = async ({
 
   return { data: orders, ...paginationData };
 };
-
-// export const getAllContacts = async ({
-//   page,
-//   perPage,
-//   sortBy,
-//   sortOrder,
-//   filter,
-//   userId,
-// }) => {
-//   const limitValue = perPage;
-//   const skipValue = page > 0 ? (page - 1) * perPage : 0;
-
-//   const contactQuery = ContactsCollection.find({ userId });
-
-//   if (filter.contactType) {
-//     contactQuery.where('contactType').equals(filter.contactType);
-//   }
-
-//   if (filter.isFavourite !== undefined) {
-//     contactQuery.where('isFavourite').equals(filter.isFavourite);
-//   }
-
-//   const [totalCount, contacts] = await Promise.all([
-//     ContactsCollection.find().merge(contactQuery).countDocuments(),
-
-//     contactQuery
-//       .sort({ [sortBy]: sortOrder })
-//       .skip(skipValue)
-//       .limit(limitValue),
-//   ]);
-
-//   const paginationData = calculatePaginationData(totalCount, page, perPage);
-
-//   return { data: contacts, ...paginationData };
-// };
 
 export const getOrderByIdService = async (orderId) => {
   const order = await OrderModel.findById(orderId);
@@ -102,62 +68,24 @@ export const updateOrderService = async (orderId, payload) => {
   return updatedOrder;
 };
 
-// import { SORT_ORDER } from '../constants/constants.js';
+export const updateStatusService = async (orderId, role, newStatus) => {
+  const order = await OrderModel.findById(orderId);
 
-// import { calculatePaginationData } from '../utils/calculatePaginationData.js';
+  if (!order) {
+    throw createHttpError(404, 'Order not found!');
+  }
 
-// //   const [totalCount, contacts] = await Promise.all([
-// //     ContactsCollection.find().merge(contactQuery).countDocuments(),
+  if (role === 'corte' && newStatus !== 'InProgress') {
+    throw createHttpError(403, 'Corte can only set status to "In Progress"');
+  }
 
-// //     contactQuery
-// //       .sort({ [sortBy]: sortOrder })
-// //       .skip(skipValue)
-// //       .limit(limitValue),
-// //   ]);
+  if (role === 'duplo' && newStatus === 'InProgress') {
+    throw createHttpError(403, 'Duplo can not set status "In progress"');
+  }
 
-// //   const paginationData = calculatePaginationData(totalCount, page, perPage);
-
-// //   return { data: contacts, ...paginationData };
-// // };
-
-// export const getAllOrdersService = async ({
-//   page,
-//   perPage,
-//   sortBy,
-//   sortOrder,
-//   filter = {},
-// }) => {
-//   const limit = perPage;
-//   const skip = (page - 1) * perPage;
-
-//   const [totalCount, orders] = await Promise.all([
-//     OrderModel.find().merge(orderQuery).countDocuments(),
-
-//     orderQuery
-//       .sort({ [sortBy]: sortOrder })
-//       .skip(skip)
-//       .limit(limit),
-//   ]);
-
-//   // const orderQuery = OrderModel.find(filter);
-//   // // const countOrders = await OrderModel.find()
-//   // //   .merge(orderQuery)
-//   // //   .countDocuments();
-
-//   // const countOrders = await OrderModel.countDocuments(orderQuery.getQuery());
-
-//   const orderQuery = OrderModel.find({}); // Без filter
-//   const countOrders = await OrderModel.countDocuments({});
-
-//   const orders = await orderQuery
-//     .skip(skip)
-//     .limit(limit)
-//     .sort({ [sortBy]: sortOrder });
-
-//   const paginationData = calculatePaginationData(countOrders, page, perPage);
-
-//   return {
-//     data: orders,
-//     ...paginationData,
-//   };
-// };
+  return await OrderModel.findByIdAndUpdate(
+    orderId,
+    { status: newStatus },
+    { new: true },
+  );
+};
