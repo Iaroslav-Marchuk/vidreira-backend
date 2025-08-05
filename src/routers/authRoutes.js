@@ -9,6 +9,7 @@ import {
 } from '../validation/userValidation.js';
 
 import {
+  getCurrentUserController,
   loginUserController,
   logoutUserController,
   refreshSessionController,
@@ -32,5 +33,7 @@ router.post(
 router.post('/logout', ctrlWrapper(logoutUserController));
 
 router.post('/refresh', ctrlWrapper(refreshSessionController));
+
+router.get('/current', ctrlWrapper(getCurrentUserController));
 
 export default router;

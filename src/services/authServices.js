@@ -74,3 +74,19 @@ export const refreshSessionService = async ({ sessionId, refreshToken }) => {
     refreshTokenValidUntil: new Date(Date.now() + ONE_DAY),
   });
 };
+
+export const getCurrentUserServise = async (sessionId) => {
+  const session = await SessionModel.findById(sessionId);
+
+  if (!session) {
+    throw createHttpError(401, 'Session not found');
+  }
+
+  const user = await UserModel.findById(session.userId);
+
+  if (!user) {
+    throw createHttpError(404, 'User not found!');
+  }
+
+  return user;
+};
