@@ -5,7 +5,6 @@ export const createOrderSchema = Joi.object({
   cliente: Joi.string().min(3).max(40).required(),
   local: Joi.object({
     zona: Joi.string().valid('L1', 'L2', 'L3').required(),
-    operator: Joi.string().min(3).max(20).required(),
   }),
   items: Joi.array().items(
     Joi.object({
@@ -26,7 +25,6 @@ export const updateOrderSchema = Joi.object({
   cliente: Joi.string().min(3).max(40),
   local: Joi.object({
     zona: Joi.string().valid('L1', 'L2', 'L3'),
-    operator: Joi.string().min(3).max(20),
   }),
   items: Joi.array().items(
     Joi.object({

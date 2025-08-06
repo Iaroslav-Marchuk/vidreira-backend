@@ -50,11 +50,18 @@ export const getOrderByIdController = async (req, res) => {
 };
 
 export const createOrderController = async (req, res) => {
-  const order = await createOrderService(req.body);
+  const payload = req.body;
+  const user = req.user;
+  const userId = req.user._id;
+
+  payload.local.operator = user.name;
+
+  const newOrder = await createOrderService(payload, userId);
+
   res.status(201).json({
     status: 201,
     message: 'Successfully created new order!',
-    data: order,
+    data: newOrder,
   });
 };
 
@@ -73,9 +80,16 @@ export const deleteOrderController = async (req, res, next) => {
 
 export const replaceOrderController = async (req, res) => {
   const { orderId } = req.params;
+  const payload = req.body;
+  const userId = req.user._id;
+  const user = req.user;
+
+  payload.local.operator = user.name;
+
   const { upsertedValue, updatedExisting } = await replaceOrderService(
     orderId,
-    req.body,
+    payload,
+    userId,
   );
 
   if (updatedExisting === true) {
@@ -95,7 +109,10 @@ export const replaceOrderController = async (req, res) => {
 
 export const updateOrderController = async (req, res, next) => {
   const { orderId } = req.params;
-  const updatedValue = await updateOrderService(orderId, req.body);
+  const payload = req.body;
+  const userId = req.user._id;
+
+  const updatedValue = await updateOrderService(orderId, payload, userId);
 
   if (!updatedValue) {
     next(createHttpError(404, 'Order not found'));
@@ -113,8 +130,14 @@ export const updateStatusController = async (req, res, next) => {
   const { orderId } = req.params;
   const { status: newStatus } = req.body;
   const { role } = req.user;
+  const userId = req.user._id;
 
-  const updatedOrder = await updateStatusService(orderId, role, newStatus);
+  const updatedOrder = await updateStatusService(
+    orderId,
+    role,
+    newStatus,
+    userId,
+  );
 
   if (!updatedOrder) {
     next(createHttpError(404, 'Order not found'));

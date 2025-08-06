@@ -2,6 +2,7 @@ import { OrderModel } from '../models/orderModel.js';
 import { calculatePaginationData } from '../utils/calculatePaginationData.js';
 import { SORT_ORDER } from '../constants/constants.js';
 import createHttpError from 'http-errors';
+import { logOrderHistory } from '../utils/logOrderHistory.js';
 
 export const getAllOrdersService = async ({
   page,
@@ -38,8 +39,20 @@ export const getOrderByIdService = async (orderId) => {
   return order;
 };
 
-export const createOrderService = async (payload) => {
+export const createOrderService = async (payload, userId) => {
   const order = await OrderModel.create(payload);
+
+  await logOrderHistory({
+    orderId: order._id,
+    action: 'created',
+    changedBy: userId,
+    changes: {
+      EP: order.EP,
+      cliente: order.cliente,
+      status: order.status,
+    },
+  });
+
   return order;
 };
 
@@ -47,28 +60,83 @@ export const deleteOrderService = async (orderId) => {
   return await OrderModel.findOneAndDelete({ _id: orderId });
 };
 
-export const replaceOrderService = async (orderId, payload) => {
+export const replaceOrderService = async (orderId, payload, userId) => {
+  const oldOrder = await OrderModel.findById(orderId);
+  if (!oldOrder) {
+    throw createHttpError(404, 'Order not found');
+  }
+
   const result = await OrderModel.findOneAndUpdate({ _id: orderId }, payload, {
     new: true,
     upsert: true,
     includeResultMetadata: true,
   });
 
+  const newOrder = result.value;
+  const changes = {};
+
+  for (const key in payload) {
+    if (JSON.stringify(oldOrder[key]) !== JSON.stringify(payload[key])) {
+      changes[key] = {
+        from: oldOrder[key],
+        to: payload[key],
+      };
+    }
+  }
+
+  if (Object.keys(changes).length > 0) {
+    await logOrderHistory({
+      orderId,
+      action: 'updated',
+      changedBy: userId,
+      changes,
+    });
+  }
+
   return {
-    upsertedValue: result.value,
+    upsertedValue: newOrder,
     updatedExisting: result.lastErrorObject.updatedExisting,
   };
 };
 
-export const updateOrderService = async (orderId, payload) => {
-  const updatedOrder = OrderModel.findOneAndUpdate({ _id: orderId }, payload, {
-    new: true,
-  });
+export const updateOrderService = async (orderId, payload, userId) => {
+  const oldOrder = await OrderModel.findById(orderId);
+  if (!oldOrder) {
+    throw createHttpError(404, 'Order not found');
+  }
+
+  const updatedOrder = await OrderModel.findOneAndUpdate(
+    { _id: orderId },
+    payload,
+    {
+      new: true,
+    },
+  );
+
+  const changes = {};
+
+  for (const key in payload) {
+    if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
+      changes[key] = {
+        from: oldOrder[key],
+        to: updatedOrder[key],
+      };
+    }
+  }
+
+  if (Object.keys(changes).length > 0) {
+    await logOrderHistory({
+      orderId,
+      action: 'updated',
+      changedBy: userId,
+      changes,
+    });
+  }
 
   return updatedOrder;
 };
 
-export const updateStatusService = async (orderId, role, newStatus) => {
+export const updateStatusService = async (orderId, role, newStatus, userId) => {
   const order = await OrderModel.findById(orderId);
 
   if (!order) {
@@ -83,9 +151,28 @@ export const updateStatusService = async (orderId, role, newStatus) => {
     throw createHttpError(403, 'Duplo can not set status "In progress"');
   }
 
-  return await OrderModel.findByIdAndUpdate(
+  const oldStatus = order.status;
+  if (oldStatus === newStatus) {
+    return order;
+  }
+
+  const updatedStatus = await OrderModel.findByIdAndUpdate(
     orderId,
     { status: newStatus },
     { new: true },
   );
+
+  await logOrderHistory({
+    orderId: order._id,
+    action: 'updated status',
+    changedBy: userId,
+    changes: {
+      status: {
+        from: oldStatus,
+        to: newStatus,
+      },
+    },
+  });
+
+  return updatedStatus;
 };
