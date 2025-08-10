@@ -21,6 +21,8 @@ import { authenticante } from '../middlewares/authenticante.js';
 import { checkRoles } from '../middlewares/checkRoles.js';
 import { ROLES } from '../constants/constants.js';
 import { checkRoleUpdateStatus } from '../middlewares/checkRoleUpdateStatus.js';
+import { checkEditableOrderStatus } from '../middlewares/checkEditableOrderStatus.js';
+import { checkDeletableOrderStatus } from '../middlewares/checkDeletableOrderStatus.js';
 
 const router = Router();
 
@@ -41,6 +43,7 @@ router.patch(
   '/:orderId',
   checkRoles([ROLES.DUPLO]),
   isValidId,
+  checkEditableOrderStatus,
   validateBody(updateOrderSchema),
   ctrlWrapper(updateOrderController),
 );
@@ -48,6 +51,7 @@ router.patch(
 router.patch(
   '/:orderId/status',
   isValidId,
+
   checkRoleUpdateStatus,
   ctrlWrapper(updateStatusController),
 );
@@ -56,6 +60,7 @@ router.put(
   '/:orderId',
   checkRoles([ROLES.DUPLO]),
   isValidId,
+  checkEditableOrderStatus,
   validateBody(createOrderSchema),
   ctrlWrapper(replaceOrderController),
 );
@@ -64,6 +69,7 @@ router.delete(
   '/:orderId',
   checkRoles([ROLES.DUPLO]),
   isValidId,
+  checkDeletableOrderStatus,
   ctrlWrapper(deleteOrderController),
 );
 
