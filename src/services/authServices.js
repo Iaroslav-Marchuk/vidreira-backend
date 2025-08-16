@@ -75,11 +75,11 @@ export const refreshSessionService = async ({ sessionId, refreshToken }) => {
   });
 };
 
-export const getCurrentUserServise = async (sessionId) => {
-  const session = await SessionModel.findById(sessionId);
+export const getCurrentUserServise = async (sessionId, refreshToken) => {
+  const session = await SessionModel.findById({ _id: sessionId, refreshToken });
 
   if (!session) {
-    throw createHttpError(401, 'Session not found');
+    throw createHttpError(401, 'Session not found or expired');
   }
 
   const user = await UserModel.findById(session.userId);

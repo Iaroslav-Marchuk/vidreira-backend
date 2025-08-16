@@ -77,7 +77,14 @@ export const refreshSessionController = async (req, res) => {
 };
 
 export const getCurrentUserController = async (req, res) => {
-  const user = await getCurrentUserServise(req.cookies.sessionId);
+  const sessionId = req.cookies.sessionId;
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!sessionId || !refreshToken) {
+    return res.status(401).json({ message: 'Not authorized' });
+  }
+
+  const user = await getCurrentUserServise(sessionId, refreshToken);
 
   res.json({
     status: 200,
