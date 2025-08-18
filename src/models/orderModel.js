@@ -49,7 +49,7 @@ const orderSchema = new mongoose.Schema(
           required: true,
         },
         sizeZ: {
-          type: Number,
+          type: String,
           required: true,
         },
         quantity: {
