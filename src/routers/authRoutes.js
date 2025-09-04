@@ -34,6 +34,6 @@ router.post('/logout', ctrlWrapper(logoutUserController));
 
 router.post('/refresh', ctrlWrapper(refreshSessionController));
 
-router.get('/profile', ctrlWrapper(getCurrentUserController));
+router.get('/currentUser', ctrlWrapper(getCurrentUserController));
 
 export default router;
