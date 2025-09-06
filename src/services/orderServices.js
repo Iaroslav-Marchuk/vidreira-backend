@@ -27,7 +27,10 @@ export const getAllOrdersService = async ({
   const orders = await ordersQuery
     .skip(skipValue)
     .limit(limitValue)
-    .sort({ [sortBy]: sortOrder });
+    .sort({ [sortBy]: sortOrder })
+    .select(
+      'EP cliente items.category items.type items.temper items.sizeX items.sizeY items.sizeZ items.quantity local.zona status createdAt',
+    );
 
   const paginationData = calculatePaginationData(ordersCount, page, perPage);
 
