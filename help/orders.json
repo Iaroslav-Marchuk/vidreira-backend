@@ -1,0 +1,75 @@
+[
+  {
+    "EP": 101,
+    "cliente": "João Silva",
+    "local": {
+      "zona": "L1",
+      "operator": "OperatorA"
+    },
+    "status": "created",
+    "items": [
+      {
+        "category": "Vidro",
+        "type": "Temperado",
+        "temper": true,
+        "sizeX": 100,
+        "sizeY": 50,
+        "sizeZ": "8mm",
+        "quantity": 2,
+        "reason": "Janela sala"
+      },
+      {
+        "category": "Espelho",
+        "type": "Comum",
+        "temper": false,
+        "sizeX": 60,
+        "sizeY": 80,
+        "sizeZ": "6mm",
+        "quantity": 1,
+        "reason": "Banheiro"
+      }
+    ]
+  },
+  {
+    "EP": 102,
+    "cliente": "Maria Fernandes",
+    "local": {
+      "zona": "L2",
+      "operator": "OperatorB"
+    },
+    "status": "inProgress",
+    "items": [
+      {
+        "category": "Vidro",
+        "type": "Laminado",
+        "temper": false,
+        "sizeX": 120,
+        "sizeY": 60,
+        "sizeZ": "10mm",
+        "quantity": 3,
+        "reason": "Porta cozinha"
+      }
+    ]
+  },
+  {
+    "EP": 103,
+    "cliente": "Carlos Pereira",
+    "local": {
+      "zona": "L3",
+      "operator": "OperatorC"
+    },
+    "status": "completed",
+    "items": [
+      {
+        "category": "Espelho",
+        "type": "Temperado",
+        "temper": true,
+        "sizeX": 70,
+        "sizeY": 100,
+        "sizeZ": "8mm",
+        "quantity": 1,
+        "reason": "Closet"
+      }
+    ]
+  }
+]

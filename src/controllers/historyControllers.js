@@ -12,6 +12,6 @@ export const getOrderHistoryController = async (req, res) => {
   res.status(200).json({
     status: 200,
     message: `Successfully found history for orderID ${orderId}`,
-    data: history,
+    history,
   });
 };

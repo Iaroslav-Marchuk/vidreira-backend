@@ -30,7 +30,7 @@ export const getAllOrdersController = async (req, res) => {
   res.status(200).json({
     status: 200,
     message: 'Succsessfully found orders!',
-    data: orders,
+    orders,
   });
 };
 
@@ -45,7 +45,7 @@ export const getOrderByIdController = async (req, res) => {
   res.status(200).json({
     status: 200,
     message: `Successfully found product with id ${orderId}!`,
-    data: order,
+    order,
   });
 };
 
@@ -61,7 +61,7 @@ export const createOrderController = async (req, res) => {
   res.status(201).json({
     status: 201,
     message: 'Successfully created new order!',
-    data: newOrder,
+    newOrder,
   });
 };
 
@@ -103,7 +103,7 @@ export const replaceOrderController = async (req, res) => {
   res.status(201).json({
     status: 201,
     message: 'Successfully created new order!',
-    data: upsertedValue,
+    upsertedValue,
   });
 };
 
@@ -122,7 +122,7 @@ export const updateOrderController = async (req, res, next) => {
   res.json({
     status: 200,
     message: 'Successfully patched order!',
-    data: updatedValue,
+    updatedValue,
   });
 };
 
@@ -147,6 +147,6 @@ export const updateStatusController = async (req, res, next) => {
   res.json({
     status: 200,
     message: 'Successfully updated status!',
-    data: updatedOrder,
+    updatedOrder,
   });
 };
