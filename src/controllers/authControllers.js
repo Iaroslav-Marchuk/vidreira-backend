@@ -90,11 +90,15 @@ export const getCurrentUserController = async (req, res) => {
     return res.status(401).json({ message: 'Not authorized' });
   }
 
-  const user = await getCurrentUserServise(sessionId, refreshToken);
+  const { user, session } = await getCurrentUserServise(
+    sessionId,
+    refreshToken,
+  );
 
   res.json({
     status: 200,
     message: 'Current user finded',
     user,
+    accessToken: session.accessToken,
   });
 };

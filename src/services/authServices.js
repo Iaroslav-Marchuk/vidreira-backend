@@ -88,5 +88,5 @@ export const getCurrentUserServise = async (sessionId, refreshToken) => {
     throw createHttpError(404, 'User not found!');
   }
 
-  return user;
+  return { user, session };
 };
