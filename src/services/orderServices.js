@@ -43,6 +43,7 @@ export const getOrderByIdService = async (orderId) => {
 };
 
 export const createOrderService = async (payload, userId) => {
+  console.log('Payload received:', payload);
   const order = await OrderModel.create(payload);
 
   await logOrderHistory({
