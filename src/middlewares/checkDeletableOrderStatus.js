@@ -10,11 +10,11 @@ export const checkDeletableOrderStatus = async (req, res, next) => {
     return;
   }
 
-  if (order.status === 'inProgress' || order.status === 'completed') {
+  if (order.status === 'Em produção' || order.status === 'Concluído') {
     next(
       createHttpError(
         403,
-        'You can’t delete an order with status "In progress" or "Completed"',
+        'You can’t delete an order with status "Em produção" or "Concluído"',
       ),
     );
     return;
