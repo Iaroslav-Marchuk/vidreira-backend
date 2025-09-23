@@ -60,6 +60,11 @@ const orderSchema = new mongoose.Schema(
           type: String,
           required: true,
         },
+        status: {
+          type: String,
+          enum: ['Criado', 'Em produção', 'Concluído'],
+          default: 'Criado',
+        },
       },
     ],
   },
@@ -69,4 +74,4 @@ const orderSchema = new mongoose.Schema(
   },
 );
 
-export const OrderModel = mongoose.model('orders', orderSchema);
+export const OrderModel = mongoose.model('Orders', orderSchema);

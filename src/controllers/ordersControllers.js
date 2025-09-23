@@ -1,13 +1,12 @@
-import createHttpError from 'http-errors';
-
 import {
-  createOrderService,
+  createOrMergeOrderService,
+  deleteOrderItemService,
   deleteOrderService,
   getAllOrdersService,
   getOrderByIdService,
-  replaceOrderService,
+  updateItemStatusService,
+  updateOrderItemService,
   updateOrderService,
-  updateStatusService,
 } from '../services/orderServices.js';
 
 import { parsePaginationParams } from '../utils/parsePaginationParams.js';
@@ -38,10 +37,6 @@ export const getOrderByIdController = async (req, res) => {
   const { orderId } = req.params;
   const order = await getOrderByIdService(orderId);
 
-  if (!order) {
-    throw createHttpError(404, 'Order not found!');
-  }
-
   res.status(200).json({
     status: 200,
     message: `Successfully found product with id ${orderId}!`,
@@ -49,61 +44,24 @@ export const getOrderByIdController = async (req, res) => {
   });
 };
 
-export const createOrderController = async (req, res) => {
+export const createOrMergeOrderController = async (req, res) => {
   const payload = req.body;
   const user = req.user;
   const userId = req.user._id;
 
   payload.local.operator = user.name;
 
-  const newOrder = await createOrderService(payload, userId);
-
-  res.status(201).json({
-    status: 201,
-    message: 'Successfully created new order!',
-    newOrder,
-  });
-};
-
-export const deleteOrderController = async (req, res, next) => {
-  const { orderId } = req.params;
-
-  const orderToDelete = await deleteOrderService(orderId);
-
-  if (!orderToDelete) {
-    next(createHttpError(404, 'Order not found'));
-    return;
-  }
-
-  res.status(204).send();
-};
-
-export const replaceOrderController = async (req, res) => {
-  const { orderId } = req.params;
-  const payload = req.body;
-  const userId = req.user._id;
-  const user = req.user;
-
-  payload.local.operator = user.name;
-
-  const { upsertedValue, updatedExisting } = await replaceOrderService(
-    orderId,
+  const { newOrder, created } = await createOrMergeOrderService(
     payload,
     userId,
   );
 
-  if (updatedExisting === true) {
-    return res.json({
-      status: 200,
-      message: 'Successfully upserted order!',
-      data: upsertedValue,
-    });
-  }
-
-  res.status(201).json({
-    status: 201,
-    message: 'Successfully created new order!',
-    upsertedValue,
+  res.status(created ? 201 : 200).json({
+    status: created ? 201 : 200,
+    message: created
+      ? 'Successfully created new order!'
+      : 'Order updated successfully!',
+    newOrder,
   });
 };
 
@@ -112,37 +70,61 @@ export const updateOrderController = async (req, res, next) => {
   const payload = req.body;
   const userId = req.user._id;
 
-  const updatedValue = await updateOrderService(orderId, payload, userId);
-
-  if (!updatedValue) {
-    next(createHttpError(404, 'Order not found'));
-    return;
-  }
+  const updatedOrder = await updateOrderService(orderId, payload, userId);
 
   res.json({
     status: 200,
-    message: 'Successfully patched order!',
-    updatedValue,
+    message: 'Successfully updated order!',
+    updatedOrder,
   });
 };
 
-export const updateStatusController = async (req, res, next) => {
-  const { orderId } = req.params;
-  const { status: newStatus } = req.body;
-  const { role } = req.user;
+export const updateOrderItemController = async (req, res, next) => {
+  const { orderId, itemId } = req.params;
+  const payload = req.body;
   const userId = req.user._id;
 
-  const updatedOrder = await updateStatusService(
+  const updatedOrder = await updateOrderItemService(
     orderId,
-    role,
-    newStatus,
+    itemId,
+    payload,
     userId,
   );
 
-  if (!updatedOrder) {
-    next(createHttpError(404, 'Order not found'));
-    return;
-  }
+  res.json({
+    status: 200,
+    message: 'Item updated successfully!',
+    updatedOrder,
+  });
+};
+
+export const deleteOrderController = async (req, res, next) => {
+  const { orderId } = req.params;
+
+  await deleteOrderService(orderId);
+
+  res.status(204).send();
+};
+
+export const deleteOrderItemController = async (req, res, next) => {
+  const { orderId, itemId } = req.params;
+  const userId = req.user._id;
+
+  await deleteOrderItemService(orderId, itemId, userId);
+  res.status(204).send();
+};
+
+export const updateItemStatusController = async (req, res, next) => {
+  const { orderId, itemId } = req.params;
+  const { status: newStatus } = req.body;
+  const userId = req.user._id;
+
+  const updatedOrder = await updateItemStatusService(
+    orderId,
+    itemId,
+    newStatus,
+    userId,
+  );
 
   res.json({
     status: 200,

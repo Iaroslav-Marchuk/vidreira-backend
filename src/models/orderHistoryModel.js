@@ -1,14 +1,25 @@
 import mongoose from 'mongoose';
 
-const historySchema = new mongoose.Schema(
+const orderHistorySchema = new mongoose.Schema(
   {
     orderId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Order',
+      ref: 'Orders',
       required: true,
+    },
+    itemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false,
     },
     action: {
       type: String,
+      enum: [
+        'Order criado',
+        'Order corrigido',
+        'Artigo corrigido',
+        'Artigo eliminado',
+        'Estado mudado',
+      ],
       required: true,
     },
     changedBy: {
@@ -31,4 +42,7 @@ const historySchema = new mongoose.Schema(
   },
 );
 
-export const HistoryModel = mongoose.model('History', historySchema);
+export const OrderHistoryModel = mongoose.model(
+  'OrderHistory',
+  orderHistorySchema,
+);

@@ -1,13 +1,14 @@
 import { Router } from 'express';
 
 import {
-  createOrderController,
+  createOrMergeOrderController,
   deleteOrderController,
+  deleteOrderItemController,
   getAllOrdersController,
   getOrderByIdController,
-  replaceOrderController,
+  updateItemStatusController,
   updateOrderController,
-  updateStatusController,
+  updateOrderItemController,
 } from '../controllers/ordersControllers.js';
 
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
@@ -20,9 +21,9 @@ import { isValidId } from '../middlewares/isValidId.js';
 import { authenticante } from '../middlewares/authenticante.js';
 import { checkRoles } from '../middlewares/checkRoles.js';
 import { ROLES } from '../constants/constants.js';
+import { checkEditableStatus } from '../middlewares/checkEditableStatus.js';
 import { checkRoleUpdateStatus } from '../middlewares/checkRoleUpdateStatus.js';
-import { checkEditableOrderStatus } from '../middlewares/checkEditableOrderStatus.js';
-import { checkDeletableOrderStatus } from '../middlewares/checkDeletableOrderStatus.js';
+import { checkDeletableStatus } from '../middlewares/checkDeletableStatus.js';
 
 const router = Router();
 
@@ -36,41 +37,48 @@ router.post(
   '/',
   checkRoles([ROLES.DUPLO]),
   validateBody(createOrderSchema),
-  ctrlWrapper(createOrderController),
+  ctrlWrapper(createOrMergeOrderController),
 );
 
 router.patch(
   '/:orderId',
   checkRoles([ROLES.DUPLO]),
   isValidId,
-  checkEditableOrderStatus,
+  checkEditableStatus,
   validateBody(updateOrderSchema),
   ctrlWrapper(updateOrderController),
 );
 
 router.patch(
-  '/:orderId/status',
-  isValidId,
-
-  checkRoleUpdateStatus,
-  ctrlWrapper(updateStatusController),
-);
-
-router.put(
-  '/:orderId',
+  '/:orderId/:itemId',
   checkRoles([ROLES.DUPLO]),
   isValidId,
-  checkEditableOrderStatus,
-  validateBody(createOrderSchema),
-  ctrlWrapper(replaceOrderController),
+  checkEditableStatus,
+  validateBody(updateOrderSchema),
+  ctrlWrapper(updateOrderItemController),
+);
+
+router.patch(
+  '/:orderId/status',
+  isValidId,
+  checkRoleUpdateStatus,
+  ctrlWrapper(updateItemStatusController),
 );
 
 router.delete(
   '/:orderId',
   checkRoles([ROLES.DUPLO]),
   isValidId,
-  checkDeletableOrderStatus,
+  checkDeletableStatus,
   ctrlWrapper(deleteOrderController),
+);
+
+router.delete(
+  '/:orderId/:itemId',
+  checkRoles([ROLES.DUPLO]),
+  isValidId,
+  checkDeletableStatus,
+  ctrlWrapper(deleteOrderItemController),
 );
 
 export default router;

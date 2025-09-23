@@ -29,7 +29,7 @@ export const getAllOrdersService = async ({
     .limit(limitValue)
     .sort({ [sortBy]: sortOrder })
     .select(
-      'EP cliente items._id items.category items.type items.temper items.sizeX items.sizeY items.sizeZ items.quantity local.zona status createdAt',
+      'EP cliente items._id items.category items.type items.temper items.sizeX items.sizeY items.sizeZ items.quantity local.zona items.status items.createdAt',
     );
 
   const paginationData = calculatePaginationData(ordersCount, page, perPage);
@@ -39,68 +39,54 @@ export const getAllOrdersService = async ({
 
 export const getOrderByIdService = async (orderId) => {
   const order = await OrderModel.findById(orderId);
+  if (!order) {
+    throw createHttpError(404, 'Order not found!');
+  }
   return order;
 };
 
-export const createOrderService = async (payload, userId) => {
-  console.log('Payload received:', payload);
-  const order = await OrderModel.create(payload);
+export const createOrMergeOrderService = async (payload, userId) => {
+  let existingOrder = await OrderModel.findOne({ EP: payload.EP });
 
-  await logOrderHistory({
-    orderId: order._id,
-    action: 'created',
-    changedBy: userId,
-    changes: {
-      EP: order.EP,
-      cliente: order.cliente,
-      status: order.status,
-    },
-  });
+  if (!existingOrder) {
+    const order = await OrderModel.create(payload);
 
-  return order;
-};
-
-export const deleteOrderService = async (orderId) => {
-  return await OrderModel.findOneAndDelete({ _id: orderId });
-};
-
-export const replaceOrderService = async (orderId, payload, userId) => {
-  const oldOrder = await OrderModel.findById(orderId);
-  if (!oldOrder) {
-    throw createHttpError(404, 'Order not found');
-  }
-
-  const result = await OrderModel.findOneAndUpdate({ _id: orderId }, payload, {
-    new: true,
-    upsert: true,
-    includeResultMetadata: true,
-  });
-
-  const newOrder = result.value;
-  const changes = {};
-
-  for (const key in payload) {
-    if (JSON.stringify(oldOrder[key]) !== JSON.stringify(payload[key])) {
-      changes[key] = {
-        from: oldOrder[key],
-        to: payload[key],
-      };
-    }
-  }
-
-  if (Object.keys(changes).length > 0) {
     await logOrderHistory({
-      orderId,
-      action: 'updated',
+      orderId: order._id,
+      action: 'Order Criado',
       changedBy: userId,
-      changes,
+      changes: {
+        EP: order.EP,
+        cliente: order.cliente,
+        itemsCount: order.items.length,
+      },
     });
-  }
 
-  return {
-    upsertedValue: newOrder,
-    updatedExisting: result.lastErrorObject.updatedExisting,
-  };
+    return { order, created: true };
+  } else {
+    existingOrder.items.push(...payload.items);
+    await existingOrder.save();
+
+    await logOrderHistory({
+      orderId: existingOrder._id,
+      action: 'Order corrigido',
+      changedBy: userId,
+      changes: {
+        addedItemsCount: payload.items.length,
+        addedItems: payload.items.map((i) => ({
+          category: i.category,
+          type: i.type,
+          temper: i.temper,
+          sizeX: i.sizeX,
+          sizeY: i.sizeY,
+          sizeZ: i.sizeZ,
+          quantity: i.quantity,
+        })),
+      },
+    });
+
+    return { order: existingOrder, created: false };
+  }
 };
 
 export const updateOrderService = async (orderId, payload, userId) => {
@@ -109,21 +95,36 @@ export const updateOrderService = async (orderId, payload, userId) => {
     throw createHttpError(404, 'Order not found');
   }
 
-  const updatedOrder = await OrderModel.findOneAndUpdate(
-    { _id: orderId },
-    payload,
-    {
-      new: true,
-    },
+  const isItemsInWork = oldOrder.items.some(
+    (item) => item.status === 'Em produção' || item.status === 'Concluído',
   );
+
+  if (isItemsInWork) {
+    throw createHttpError(
+      403,
+      "Can't edit order with item status 'Em produção' or 'Concluído'",
+    );
+  }
+
+  const allowedFields = ['EP', 'cliente', 'local'];
+  const updateData = {};
+  for (const key of allowedFields) {
+    if (payload[key] !== undefined) {
+      updateData[key] = payload[key];
+    }
+  }
+
+  const updatedOrder = await OrderModel.findByIdAndUpdate(orderId, updateData, {
+    new: true,
+  });
 
   const changes = {};
 
-  for (const key in payload) {
+  for (const key in updateData) {
     if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
       changes[key] = {
-        from: oldOrder[key],
-        to: updatedOrder[key],
+        old: oldOrder[key],
+        new: updatedOrder[key],
       };
     }
   }
@@ -131,7 +132,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
   if (Object.keys(changes).length > 0) {
     await logOrderHistory({
       orderId,
-      action: 'updated',
+      action: 'Order corrigido',
       changedBy: userId,
       changes,
     });
@@ -140,43 +141,170 @@ export const updateOrderService = async (orderId, payload, userId) => {
   return updatedOrder;
 };
 
-export const updateStatusService = async (orderId, role, newStatus, userId) => {
-  const order = await OrderModel.findById(orderId);
+export const updateOrderItemService = async (
+  orderId,
+  itemId,
+  payload,
+  userId,
+) => {
+  const oldOrder = await OrderModel.findById(orderId);
+  if (!oldOrder) throw createHttpError(404, 'Order not found');
 
-  if (!order) {
+  const oldItem = oldOrder.items.find((i) => i._id.toString() === itemId);
+  if (!oldItem) throw createHttpError(404, 'Item not found');
+
+  if (oldItem.status === 'Em produção') {
+    throw createHttpError(403, "Can't edit item with status 'Em produção'");
+  }
+
+  const allowedFields = [
+    'category',
+    'type',
+    'temper',
+    'sizeX',
+    'sizeY',
+    'sizeZ',
+    'quantity',
+    'reason',
+  ];
+
+  const updateItem = {};
+  for (const key of allowedFields) {
+    if (payload[key] !== undefined) {
+      updateItem[`items.$.${key}`] = payload[key];
+    }
+  }
+
+  const updatedOrder = await OrderModel.findOneAndUpdate(
+    { _id: orderId, 'items._id': itemId },
+    { $set: updateItem },
+    { new: true },
+  );
+
+  const changes = {};
+  for (const key of allowedFields) {
+    const updatedValue = updatedOrder.items.find(
+      (i) => i._id.toString() === itemId,
+    )[key];
+    if (JSON.stringify(oldItem[key]) !== JSON.stringify(updatedValue)) {
+      changes[key] = { old: oldItem[key], new: updatedValue };
+    }
+  }
+
+  if (Object.keys(changes).length > 0) {
+    await logOrderHistory({
+      orderId,
+      action: 'Artigo corrigido',
+      changedBy: userId,
+      changes,
+    });
+  }
+
+  return updatedOrder;
+};
+
+export const deleteOrderService = async (orderId) => {
+  const deletedOrder = await OrderModel.findOneAndDelete({ _id: orderId });
+
+  if (!deletedOrder) {
     throw createHttpError(404, 'Order not found!');
   }
 
-  if (role === 'corte' && newStatus !== 'InProgress') {
-    throw createHttpError(403, 'Corte can only set status to "In Progress"');
+  return deletedOrder;
+};
+
+export const deleteOrderItemService = async (orderId, itemId, userId) => {
+  const order = await OrderModel.findById(orderId);
+  if (!order) throw createHttpError(404, 'Order not found');
+
+  const deletedItem = order.items.find((i) => i._id.toString() === itemId);
+  if (!deletedItem) throw createHttpError(404, 'Item not found');
+
+  if (order.items.length === 1) {
+    return await deleteOrderService(orderId);
   }
 
-  if (role === 'duplo' && newStatus === 'InProgress') {
-    throw createHttpError(403, 'Duplo can not set status "In progress"');
-  }
-
-  const oldStatus = order.status;
-  if (oldStatus === newStatus) {
-    return order;
-  }
-
-  const updatedStatus = await OrderModel.findByIdAndUpdate(
+  const result = await OrderModel.findByIdAndUpdate(
     orderId,
-    { status: newStatus },
+    { $pull: { items: { _id: itemId } } },
     { new: true },
   );
 
   await logOrderHistory({
-    orderId: order._id,
-    action: 'updated status',
+    orderId,
+    itemId,
+    action: 'Artigo eliminado',
     changedBy: userId,
     changes: {
-      status: {
-        from: oldStatus,
-        to: newStatus,
+      deletedItem: {
+        category: deletedItem.category,
+        type: deletedItem.type,
+        temper: deletedItem.temper,
+        sizeX: deletedItem.sizeX,
+        sizeY: deletedItem.sizeY,
+        sizeZ: deletedItem.sizeZ,
+        quantity: deletedItem.quantity,
       },
     },
   });
 
-  return updatedStatus;
+  return result;
+};
+
+export const updateItemStatusService = async (
+  orderId,
+  itemId,
+  newStatus,
+  userId,
+) => {
+  const order = await OrderModel.findById(orderId);
+  if (!order) throw createHttpError(404, 'Order not found');
+
+  const oldItem = order.items.find((i) => i._id.toString() === itemId);
+  if (!oldItem) throw createHttpError(404, 'Item not found');
+
+  if (oldItem.status === newStatus) return order;
+
+  const updatedOrder = await OrderModel.findOneAndUpdate(
+    { _id: orderId, 'items._id': itemId },
+    { $set: { 'items.$.status': newStatus } },
+    { new: true },
+  );
+
+  await logOrderHistory({
+    orderId,
+    itemId,
+    action: 'Estado mudado',
+    changedBy: userId,
+    changes: {
+      status: { old: oldItem.status, new: newStatus },
+    },
+  });
+
+  let newOrderStatus = updatedOrder.status;
+  const itemStatuses = updatedOrder.items.map((i) => i.status);
+
+  if (itemStatuses.every((s) => s === 'Concluído')) {
+    newOrderStatus = 'Concluído';
+  } else if (itemStatuses.some((s) => s === 'Em produção')) {
+    newOrderStatus = 'Em produção';
+  } else {
+    newOrderStatus = 'Criado';
+  }
+
+  if (newOrderStatus !== updatedOrder.status) {
+    updatedOrder.status = newOrderStatus;
+    await updatedOrder.save();
+
+    await logOrderHistory({
+      orderId,
+      action: 'Estado mudado',
+      changedBy: userId,
+      changes: {
+        status: { old: order.status, new: newOrderStatus },
+      },
+    });
+  }
+
+  return updatedOrder;
 };

@@ -5,7 +5,7 @@ export const getOrderHistoryController = async (req, res) => {
   const { orderId } = req.params;
   const history = await getOrderHistoryService(orderId);
 
-  if (!history) {
+  if (!history || history.length === 0) {
     throw createHttpError(404, 'History not found');
   }
 
