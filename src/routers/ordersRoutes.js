@@ -15,6 +15,7 @@ import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import { validateBody } from '../middlewares/validateBody.js';
 import {
   createOrderSchema,
+  updateOrderItemSchema,
   updateOrderSchema,
 } from '../validation/orderValidarion.js';
 import { isValidId } from '../middlewares/isValidId.js';
@@ -54,7 +55,7 @@ router.patch(
   checkRoles([ROLES.DUPLO]),
   isValidId,
   checkEditableStatus,
-  validateBody(updateOrderSchema),
+  validateBody(updateOrderItemSchema),
   ctrlWrapper(updateOrderItemController),
 );
 
