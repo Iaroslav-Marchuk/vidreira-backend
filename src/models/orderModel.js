@@ -66,6 +66,10 @@ const orderSchema = new mongoose.Schema(
           default: 'Criado',
         },
       },
+      {
+        timestamps: true,
+        versionKey: false,
+      },
     ],
   },
   {
