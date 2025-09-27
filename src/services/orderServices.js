@@ -28,9 +28,6 @@ export const getAllOrdersService = async ({
     .skip(skipValue)
     .limit(limitValue)
     .sort({ [sortBy]: sortOrder });
-  // .select(
-  //   'EP cliente local.zona status items._id items.category items.type items.temper items.sizeX items.sizeY items.sizeZ items.quantity items.status items.createdAt',
-  // );
 
   const paginationData = calculatePaginationData(ordersCount, page, perPage);
 
@@ -203,8 +200,11 @@ export const updateOrderItemService = async (
   return updatedOrder;
 };
 
-export const deleteOrderService = async (orderId) => {
-  const deletedOrder = await OrderModel.findOneAndDelete({ _id: orderId });
+export const deleteOrderService = async ({ orderId, userId }) => {
+  const deletedOrder = await OrderModel.findOneAndDelete({
+    _id: orderId,
+    userId,
+  });
 
   if (!deletedOrder) {
     throw createHttpError(404, 'Order not found!');
