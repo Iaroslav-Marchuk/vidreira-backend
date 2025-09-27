@@ -51,17 +51,14 @@ export const createOrMergeOrderController = async (req, res) => {
 
   payload.local.operator = user.name;
 
-  const { newOrder, created } = await createOrMergeOrderService(
-    payload,
-    userId,
-  );
+  const { order, created } = await createOrMergeOrderService(payload, userId);
 
   res.status(created ? 201 : 200).json({
     status: created ? 201 : 200,
     message: created
       ? 'Successfully created new order!'
       : 'Order updated successfully!',
-    newOrder,
+    newOrder: order,
   });
 };
 
