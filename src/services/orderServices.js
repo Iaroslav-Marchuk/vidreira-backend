@@ -200,16 +200,11 @@ export const updateOrderItemService = async (
   return updatedOrder;
 };
 
-export const deleteOrderService = async ({ orderId, userId }) => {
-  const deletedOrder = await OrderModel.findOneAndDelete({
-    _id: orderId,
-    userId,
-  });
-
+export const deleteOrderService = async (orderId) => {
+  const deletedOrder = await OrderModel.findOneAndDelete({ _id: orderId });
   if (!deletedOrder) {
     throw createHttpError(404, 'Order not found!');
   }
-
   return deletedOrder;
 };
 
