@@ -1,5 +1,24 @@
 import mongoose from 'mongoose';
 
+export const itemSchema = new mongoose.Schema(
+  {
+    category: { type: String, required: true },
+    type: { type: String, required: true },
+    temper: { type: Boolean, required: true },
+    sizeX: { type: Number, required: true },
+    sizeY: { type: Number, required: true },
+    sizeZ: { type: String, required: true },
+    quantity: { type: Number, required: true },
+    reason: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ['Criado', 'Em produção', 'Concluído'],
+      default: 'Criado',
+    },
+  },
+  { timestamps: true },
+);
+
 const orderSchema = new mongoose.Schema(
   {
     EP: {
@@ -26,51 +45,7 @@ const orderSchema = new mongoose.Schema(
       default: 'Criado',
     },
 
-    items: [
-      {
-        category: {
-          type: String,
-          required: true,
-        },
-        type: {
-          type: String,
-          required: true,
-        },
-        temper: {
-          type: Boolean,
-          required: true,
-        },
-        sizeX: {
-          type: Number,
-          required: true,
-        },
-        sizeY: {
-          type: Number,
-          required: true,
-        },
-        sizeZ: {
-          type: String,
-          required: true,
-        },
-        quantity: {
-          type: Number,
-          required: true,
-        },
-        reason: {
-          type: String,
-          required: true,
-        },
-        status: {
-          type: String,
-          enum: ['Criado', 'Em produção', 'Concluído'],
-          default: 'Criado',
-        },
-      },
-      {
-        timestamps: true,
-        versionKey: false,
-      },
-    ],
+    items: [itemSchema],
   },
   {
     timestamps: true,
