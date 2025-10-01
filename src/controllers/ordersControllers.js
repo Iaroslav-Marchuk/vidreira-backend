@@ -105,12 +105,25 @@ export const deleteOrderController = async (req, res, next) => {
   });
 };
 
+// export const deleteOrderItemController = async (req, res, next) => {
+//   const { orderId, itemId } = req.params;
+
+//   await deleteOrderItemService(orderId, itemId);
+//   res.status(204).send();
+// };
+
 export const deleteOrderItemController = async (req, res, next) => {
   const { orderId, itemId } = req.params;
-  const userId = req.user._id;
 
-  await deleteOrderItemService(orderId, itemId, userId);
-  res.status(204).send();
+  try {
+    const result = await deleteOrderItemService(orderId, itemId);
+    res.status(200).json({
+      updatedOrder: result || null,
+      deletedEntireOrder: !result,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const updateItemStatusController = async (req, res, next) => {
