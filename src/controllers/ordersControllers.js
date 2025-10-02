@@ -112,18 +112,30 @@ export const deleteOrderController = async (req, res, next) => {
 //   res.status(204).send();
 // };
 
-export const deleteOrderItemController = async (req, res, next) => {
-  const { orderId, itemId } = req.params;
+// export const deleteOrderItemController = async (req, res, next) => {
+//   const { orderId, itemId } = req.params;
 
-  try {
-    const result = await deleteOrderItemService(orderId, itemId);
-    res.status(200).json({
-      updatedOrder: result || null,
-      deletedEntireOrder: !result,
-    });
-  } catch (error) {
-    next(error);
-  }
+//   try {
+//     const result = await deleteOrderItemService(orderId, itemId);
+//     res.status(200).json({
+//       updatedOrder: result || null,
+//       deletedEntireOrder: !result,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+export const deleteOrderItemController = async (req, res, next) => {
+  const { orderId, itemId, userId } = req.params;
+
+  const result = await deleteOrderItemService(orderId, itemId, userId);
+  res.json({
+    status: 200,
+    message: 'Item deleted successfully!',
+    deletedItemId: result.deletedItemId,
+    updatedOrder: result.updatedOrder,
+  });
 };
 
 export const updateItemStatusController = async (req, res, next) => {

@@ -215,16 +215,6 @@ export const deleteOrderItemService = async (orderId, itemId, userId) => {
   const deletedItem = order.items.find((i) => i._id.toString() === itemId);
   if (!deletedItem) throw createHttpError(404, 'Item not found');
 
-  if (order.items.length === 1) {
-    return await deleteOrderService(orderId);
-  }
-
-  const result = await OrderModel.findByIdAndUpdate(
-    orderId,
-    { $pull: { items: { _id: itemId } } },
-    { new: true },
-  );
-
   await logOrderHistory({
     orderId,
     itemId,
@@ -243,7 +233,18 @@ export const deleteOrderItemService = async (orderId, itemId, userId) => {
     },
   });
 
-  return result;
+  if (order.items.length === 1) {
+    await deleteOrderService(orderId);
+    return { deletedItemId: itemId };
+  }
+
+  const updatedOrder = await OrderModel.findByIdAndUpdate(
+    orderId,
+    { $pull: { items: { _id: itemId } } },
+    { new: true },
+  );
+
+  return { updatedOrder: updatedOrder, deletedItemId: itemId };
 };
 
 export const updateItemStatusService = async (
