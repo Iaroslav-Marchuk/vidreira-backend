@@ -8,7 +8,7 @@ export const getAllOrdersService = async ({
   page,
   perPage,
   sortBy = 'createdAt',
-  sortOrder = SORT_ORDER.ASC,
+  sortOrder = SORT_ORDER.DESC,
   filter = {},
 }) => {
   const limitValue = perPage;
