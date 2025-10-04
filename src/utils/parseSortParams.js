@@ -1,4 +1,4 @@
-const keys = ['_id', 'EP', 'zona', 'createdAt', 'status'];
+const keys = ['EP', 'cliente', 'local.zona', 'createdAt', 'status'];
 
 function parseSortBy(sortBy) {
   if (typeof sortBy === 'undefined') {
