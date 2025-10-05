@@ -3,6 +3,7 @@ import { calculatePaginationData } from '../utils/calculatePaginationData.js';
 import { SORT_ORDER } from '../constants/constants.js';
 import createHttpError from 'http-errors';
 import { logOrderHistory } from '../utils/logOrderHistory.js';
+import { ClientModel } from '../models/clientModel.js';
 
 export const getAllOrdersService = async ({
   page,
@@ -18,7 +19,7 @@ export const getAllOrdersService = async ({
     Object.entries(filter).filter(([, value]) => value !== undefined),
   );
 
-  const ordersQuery = OrderModel.find(cleanFilter);
+  const ordersQuery = OrderModel.find(cleanFilter).populate('cliente');
 
   const ordersCount = await OrderModel.find(cleanFilter)
     .merge(ordersQuery)
@@ -35,7 +36,7 @@ export const getAllOrdersService = async ({
 };
 
 export const getOrderByIdService = async (orderId) => {
-  const order = await OrderModel.findById(orderId);
+  const order = await OrderModel.findById(orderId).populate('cliente');
   if (!order) {
     throw createHttpError(404, 'Order not found!');
   }
@@ -43,10 +44,19 @@ export const getOrderByIdService = async (orderId) => {
 };
 
 export const createOrMergeOrderService = async (payload, userId) => {
-  let existingOrder = await OrderModel.findOne({ EP: payload.EP });
+  if (typeof payload.cliente === 'string') {
+    const client = await ClientModel.findOne({ name: payload.cliente });
+    if (!client) throw createHttpError(400, 'Invalid client name');
+    payload.cliente = client._id;
+  }
+
+  let existingOrder = await OrderModel.findOne({ EP: payload.EP }).populate(
+    'cliente',
+  );
 
   if (!existingOrder) {
     const order = await OrderModel.create(payload);
+    await order.populate('cliente');
 
     await logOrderHistory({
       orderId: order._id,
@@ -82,6 +92,7 @@ export const createOrMergeOrderService = async (payload, userId) => {
       },
     });
 
+    await existingOrder.populate('cliente');
     return { order: existingOrder, created: false };
   }
 };
@@ -90,6 +101,12 @@ export const updateOrderService = async (orderId, payload, userId) => {
   const oldOrder = await OrderModel.findById(orderId);
   if (!oldOrder) {
     throw createHttpError(404, 'Order not found');
+  }
+
+  if (payload.cliente && typeof payload.cliente === 'string') {
+    const client = await ClientModel.findOne({ name: payload.cliente });
+    if (!client) throw createHttpError(400, 'Invalid client name');
+    payload.cliente = client._id;
   }
 
   const isItemsInWork = oldOrder.items.some(
@@ -113,7 +130,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
 
   const updatedOrder = await OrderModel.findByIdAndUpdate(orderId, updateData, {
     new: true,
-  });
+  }).populate('cliente');
 
   const changes = {};
 
@@ -176,7 +193,7 @@ export const updateOrderItemService = async (
     { _id: orderId, 'items._id': itemId },
     { $set: updateItem },
     { new: true },
-  );
+  ).populate('cliente');
 
   const changes = {};
   for (const key of allowedFields) {
@@ -242,7 +259,7 @@ export const deleteOrderItemService = async (orderId, itemId, userId) => {
     orderId,
     { $pull: { items: { _id: itemId } } },
     { new: true },
-  );
+  ).populate('cliente');
 
   return { updatedOrder: updatedOrder, deletedItemId: itemId };
 };
@@ -259,13 +276,13 @@ export const updateItemStatusService = async (
   const oldItem = order.items.find((i) => i._id.toString() === itemId);
   if (!oldItem) throw createHttpError(404, 'Item not found');
 
-  if (oldItem.status === newStatus) return order;
+  if (oldItem.status === newStatus) return await order.populate('cliente');
 
   const updatedOrder = await OrderModel.findOneAndUpdate(
     { _id: orderId, 'items._id': itemId },
     { $set: { 'items.$.status': newStatus } },
     { new: true },
-  );
+  ).populate('cliente');
 
   await logOrderHistory({
     orderId,

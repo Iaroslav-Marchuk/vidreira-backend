@@ -106,7 +106,8 @@ export const deleteOrderController = async (req, res, next) => {
 };
 
 export const deleteOrderItemController = async (req, res, next) => {
-  const { orderId, itemId, userId } = req.params;
+  const { orderId, itemId } = req.params;
+  const userId = req.user._id;
 
   const result = await deleteOrderItemService(orderId, itemId, userId);
   res.json({

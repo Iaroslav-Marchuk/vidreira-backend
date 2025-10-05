@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-export const itemSchema = new mongoose.Schema(
+const itemSchema = new mongoose.Schema(
   {
     category: { type: String, required: true },
     type: { type: String, required: true },
@@ -26,7 +26,8 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
     cliente: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Clients',
       required: true,
     },
     local: {
