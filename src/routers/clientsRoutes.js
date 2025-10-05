@@ -7,6 +7,6 @@ const router = Router();
 
 router.use(authenticante);
 
-router.get('/clients', ctrlWrapper(getAllClientsController));
+router.get('/', ctrlWrapper(getAllClientsController));
 
 export default router;
