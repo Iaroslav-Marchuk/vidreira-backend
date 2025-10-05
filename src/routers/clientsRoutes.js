@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
-import { isValidId } from '../middlewares/isValidId.js';
-import { getOrderHistoryController } from '../controllers/historyControllers.js';
+import { getAllClientsController } from '../controllers/clientsController.js';
 import { authenticante } from '../middlewares/authenticante.js';
 
 const router = Router();
 
 router.use(authenticante);
 
-router.get('/:orderId', isValidId, ctrlWrapper(getOrderHistoryController));
+router.get('/clients', ctrlWrapper(getAllClientsController));
 
 export default router;
