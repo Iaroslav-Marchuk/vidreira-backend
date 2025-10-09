@@ -157,9 +157,7 @@ export const createOrMergeOrderService = async (payload, userId) => {
 
 export const updateOrderService = async (orderId, payload, userId) => {
   const oldOrder = await OrderModel.findById(orderId);
-  if (!oldOrder) {
-    throw createHttpError(404, 'Order not found');
-  }
+  if (!oldOrder) throw createHttpError(404, 'Order not found');
 
   if (payload.cliente && typeof payload.cliente === 'string') {
     const client = await ClientModel.findOne({ name: payload.cliente });
@@ -178,6 +176,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
     );
   }
 
+  // копіюємо лише базові поля
   const allowedFields = ['EP', 'cliente', 'local'];
   const updateData = {};
   for (const key of allowedFields) {
@@ -186,26 +185,32 @@ export const updateOrderService = async (orderId, payload, userId) => {
     }
   }
 
-  // Додавання нових елементів, якщо вони є в payload
-  if (payload.items && Array.isArray(payload.items)) {
-    updateData.$push = { items: { $each: payload.items } };
+  // ✅ додаємо айтеми тільки після allowedFields
+  const updateOps = {};
+  if (
+    payload.items &&
+    Array.isArray(payload.items) &&
+    payload.items.length > 0
+  ) {
+    updateOps.$push = { items: { $each: payload.items } };
   }
 
-  const updatedOrder = await OrderModel.findByIdAndUpdate(orderId, updateData, {
-    new: true,
-  }).populate('cliente');
+  // якщо і updateData, і $push є — об'єднуємо
+  const finalUpdate = { ...updateData, ...updateOps };
+
+  const updatedOrder = await OrderModel.findByIdAndUpdate(
+    orderId,
+    finalUpdate,
+    {
+      new: true,
+    },
+  ).populate('cliente');
 
   const changes = {};
 
   for (const key in updateData) {
-    if (
-      key !== '$push' &&
-      JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])
-    ) {
-      changes[key] = {
-        old: oldOrder[key],
-        new: updatedOrder[key],
-      };
+    if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
+      changes[key] = { old: oldOrder[key], new: updatedOrder[key] };
     }
   }
 
