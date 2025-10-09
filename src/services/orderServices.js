@@ -97,6 +97,64 @@ export const createOrMergeOrderService = async (payload, userId) => {
   }
 };
 
+// export const updateOrderService = async (orderId, payload, userId) => {
+//   const oldOrder = await OrderModel.findById(orderId);
+//   if (!oldOrder) {
+//     throw createHttpError(404, 'Order not found');
+//   }
+
+//   if (payload.cliente && typeof payload.cliente === 'string') {
+//     const client = await ClientModel.findOne({ name: payload.cliente });
+//     if (!client) throw createHttpError(400, 'Invalid client name');
+//     payload.cliente = client._id;
+//   }
+
+//   const isItemsInWork = oldOrder.items.some(
+//     (item) => item.status === 'Em produção' || item.status === 'Concluído',
+//   );
+
+//   if (isItemsInWork) {
+//     throw createHttpError(
+//       403,
+//       "Can't edit order with item status 'Em produção' or 'Concluído'",
+//     );
+//   }
+
+//   const allowedFields = ['EP', 'cliente', 'local'];
+//   const updateData = {};
+//   for (const key of allowedFields) {
+//     if (payload[key] !== undefined) {
+//       updateData[key] = payload[key];
+//     }
+//   }
+
+//   const updatedOrder = await OrderModel.findByIdAndUpdate(orderId, updateData, {
+//     new: true,
+//   }).populate('cliente');
+
+//   const changes = {};
+
+//   for (const key in updateData) {
+//     if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
+//       changes[key] = {
+//         old: oldOrder[key],
+//         new: updatedOrder[key],
+//       };
+//     }
+//   }
+
+//   if (Object.keys(changes).length > 0) {
+//     await logOrderHistory({
+//       orderId,
+//       action: 'Order corrigido',
+//       changedBy: userId,
+//       changes,
+//     });
+//   }
+
+//   return updatedOrder;
+// };
+
 export const updateOrderService = async (orderId, payload, userId) => {
   const oldOrder = await OrderModel.findById(orderId);
   if (!oldOrder) {
@@ -113,7 +171,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
     (item) => item.status === 'Em produção' || item.status === 'Concluído',
   );
 
-  if (isItemsInWork) {
+  if (isItemsInWork && payload.items) {
     throw createHttpError(
       403,
       "Can't edit order with item status 'Em produção' or 'Concluído'",
@@ -128,6 +186,11 @@ export const updateOrderService = async (orderId, payload, userId) => {
     }
   }
 
+  // Додавання нових елементів, якщо вони є в payload
+  if (payload.items && Array.isArray(payload.items)) {
+    updateData.$push = { items: { $each: payload.items } };
+  }
+
   const updatedOrder = await OrderModel.findByIdAndUpdate(orderId, updateData, {
     new: true,
   }).populate('cliente');
@@ -135,12 +198,28 @@ export const updateOrderService = async (orderId, payload, userId) => {
   const changes = {};
 
   for (const key in updateData) {
-    if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
+    if (
+      key !== '$push' &&
+      JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])
+    ) {
       changes[key] = {
         old: oldOrder[key],
         new: updatedOrder[key],
       };
     }
+  }
+
+  if (payload.items && payload.items.length > 0) {
+    changes.addedItemsCount = payload.items.length;
+    changes.addedItems = payload.items.map((i) => ({
+      category: i.category,
+      type: i.type,
+      temper: i.temper,
+      sizeX: i.sizeX,
+      sizeY: i.sizeY,
+      sizeZ: i.sizeZ,
+      quantity: i.quantity,
+    }));
   }
 
   if (Object.keys(changes).length > 0) {
