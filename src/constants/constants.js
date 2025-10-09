@@ -11,3 +11,45 @@ export const ROLES = {
   CORTE: 'corte',
   GUEST: 'guest',
 };
+
+// export const ROLES = {
+//   duplo: {
+//     canCreate: true,
+//     canEdit: true,
+//     canDelete: true,
+//     canChangeStatusToInprogress: false,
+//     canChangeStatusToCompleted: true,
+//   },
+
+//   corte: {
+//     canCreate: false,
+//     canEdit: false,
+//     canDelete: false,
+//     canChangeStatusToInprogress: true,
+//     canChangeStatusToCompleted: false,
+//   },
+
+//   logistic: {
+//     canCreate: true,
+//     canEdit: true,
+//     canDelete: true,
+//     canChangeStatusToInprogress: false,
+//     canChangeStatusToCompleted: false,
+//   },
+
+//   logistic: {
+//     canCreate: true,
+//     canEdit: true,
+//     canDelete: true,
+//     canChangeStatusToInprogress: false,
+//     canChangeStatusToCompleted: false,
+//   },
+
+//   guest: {
+//     canCreate: false,
+//     canEdit: false,
+//     canDelete: false,
+//     canChangeStatusToInprogress: false,
+//     canChangeStatusToCompleted: false,
+//   },
+// };

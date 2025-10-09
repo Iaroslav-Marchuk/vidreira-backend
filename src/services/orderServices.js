@@ -176,17 +176,21 @@ export const updateOrderService = async (orderId, payload, userId) => {
     );
   }
 
-  // копіюємо лише базові поля
   const allowedFields = ['EP', 'cliente', 'local'];
-  const updateData = {};
+  const updateOps = {};
+
+  // $set — тільки для основних полів
+  const setData = {};
   for (const key of allowedFields) {
     if (payload[key] !== undefined) {
-      updateData[key] = payload[key];
+      setData[key] = payload[key];
     }
   }
+  if (Object.keys(setData).length > 0) {
+    updateOps.$set = setData;
+  }
 
-  // ✅ додаємо айтеми тільки після allowedFields
-  const updateOps = {};
+  // $push — якщо додаємо айтеми
   if (
     payload.items &&
     Array.isArray(payload.items) &&
@@ -195,20 +199,14 @@ export const updateOrderService = async (orderId, payload, userId) => {
     updateOps.$push = { items: { $each: payload.items } };
   }
 
-  // якщо і updateData, і $push є — об'єднуємо
-  const finalUpdate = { ...updateData, ...updateOps };
-
-  const updatedOrder = await OrderModel.findByIdAndUpdate(
-    orderId,
-    finalUpdate,
-    {
-      new: true,
-    },
-  ).populate('cliente');
+  const updatedOrder = await OrderModel.findByIdAndUpdate(orderId, updateOps, {
+    new: true,
+  }).populate('cliente');
 
   const changes = {};
 
-  for (const key in updateData) {
+  // лог змін
+  for (const key in setData) {
     if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
       changes[key] = { old: oldOrder[key], new: updatedOrder[key] };
     }
@@ -230,7 +228,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
   if (Object.keys(changes).length > 0) {
     await logOrderHistory({
       orderId,
-      action: 'Order corrigido',
+      action: 'Order updated',
       changedBy: userId,
       changes,
     });
