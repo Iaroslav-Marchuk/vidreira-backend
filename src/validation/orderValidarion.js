@@ -28,6 +28,18 @@ export const updateOrderSchema = Joi.object({
   local: Joi.object({
     zona: Joi.string().valid('L1', 'L2', 'L3'),
   }),
+  items: Joi.array().items(
+    Joi.object({
+      category: Joi.string().required(),
+      type: Joi.string().required(),
+      temper: Joi.boolean().required(),
+      sizeX: Joi.number().integer().positive().min(1).max(6000).required(),
+      sizeY: Joi.number().integer().positive().min(1).max(6000).required(),
+      sizeZ: Joi.string().min(1).max(20).required(),
+      quantity: Joi.number().integer().positive().min(1).required(),
+      reason: Joi.string().min(1).max(100).required(),
+    }),
+  ),
 });
 
 export const updateOrderItemSchema = Joi.object({
