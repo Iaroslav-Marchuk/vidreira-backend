@@ -211,12 +211,14 @@ export const updateOrderService = async (orderId, payload, userId) => {
   const oldOrder = await OrderModel.findById(orderId);
   if (!oldOrder) throw createHttpError(404, 'Order not found');
 
+  // Перевірка клієнта
   if (payload.cliente && typeof payload.cliente === 'string') {
     const client = await ClientModel.findOne({ name: payload.cliente });
     if (!client) throw createHttpError(400, 'Invalid client name');
     payload.cliente = client._id;
   }
 
+  // Перевірка існуючих айтемів в роботі
   const isItemsInWork = oldOrder.items.some(
     (item) => item.status === 'Em produção' || item.status === 'Concluído',
   );
@@ -242,22 +244,25 @@ export const updateOrderService = async (orderId, payload, userId) => {
     updateOps.$set = setData;
   }
 
-  // $push — якщо додаємо айтеми
+  // $push — якщо додаємо нові айтеми
   if (
     payload.items &&
     Array.isArray(payload.items) &&
     payload.items.length > 0
   ) {
-    updateOps.$push = { items: { $each: payload.items } };
+    const itemsToAdd = payload.items.map((i) => ({
+      ...i,
+      status: 'Criado', // обов’язково для нових айтемів
+    }));
+    updateOps.$push = { items: { $each: itemsToAdd } };
   }
 
   const updatedOrder = await OrderModel.findByIdAndUpdate(orderId, updateOps, {
     new: true,
   }).populate('cliente');
 
+  // Лог змін
   const changes = {};
-
-  // лог змін
   for (const key in setData) {
     if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
       changes[key] = { old: oldOrder[key], new: updatedOrder[key] };
