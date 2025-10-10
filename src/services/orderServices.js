@@ -99,12 +99,25 @@ export const getOrderByIdService = async (orderId) => {
 // };
 
 export const createOrderService = async (payload, userId) => {
-  const { exists } = await checkOrderExists(payload.EP, payload.cliente);
+  // Перевірка клієнта
+  let clientId = payload.cliente;
+  if (typeof payload.cliente === 'string') {
+    const client = await ClientModel.findOne({ name: payload.cliente });
+    if (!client) throw createHttpError(400, 'Invalid client name');
+    clientId = client._id;
+  }
+
+  // Перевірка існування замовлення
+  const { exists } = await checkOrderExists(payload.EP, clientId);
   if (exists) {
     throw createHttpError(409, 'Order with this EP and client already exists');
   }
 
-  const newOrder = await OrderModel.create(payload);
+  // Створення замовлення з ObjectId клієнта
+  const newOrder = await OrderModel.create({
+    ...payload,
+    cliente: clientId,
+  });
   await newOrder.populate('cliente');
 
   await logOrderHistory({
@@ -122,19 +135,37 @@ export const createOrderService = async (payload, userId) => {
 };
 
 export const mergeOrderService = async (payload, userId) => {
-  const { exists, order } = await checkOrderExists(payload.EP, payload.cliente);
+  // Перевірка клієнта
+  let clientId = payload.cliente;
+  if (typeof payload.cliente === 'string') {
+    const client = await ClientModel.findOne({ name: payload.cliente });
+    if (!client) throw createHttpError(400, 'Invalid client name');
+    clientId = client._id;
+  }
+
+  // Пошук існуючого замовлення
+  const { exists, order } = await checkOrderExists(payload.EP, clientId);
   if (!exists) throw createHttpError(404, 'Order not found for merge');
 
-  order.items.push(...payload.items);
+  // Додавання нових айтемів
+  if (payload.items && payload.items.length > 0) {
+    const itemsToAdd = payload.items.map((i) => ({
+      ...i,
+      status: 'Criado', // обов’язково для нових айтемів
+    }));
+    order.items.push(...itemsToAdd);
+  }
+
   await order.save();
+  await order.populate('cliente');
 
   await logOrderHistory({
     orderId: order._id,
     action: 'Order corrigido',
     changedBy: userId,
     changes: {
-      addedItemsCount: payload.items.length,
-      addedItems: payload.items.map((i) => ({
+      addedItemsCount: payload.items?.length || 0,
+      addedItems: payload.items?.map((i) => ({
         category: i.category,
         type: i.type,
         temper: i.temper,
