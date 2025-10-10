@@ -1,9 +1,10 @@
 import {
-  createOrMergeOrderService,
+  createOrderService,
   deleteOrderItemService,
   deleteOrderService,
   getAllOrdersService,
   getOrderByIdService,
+  mergeOrderService,
   updateItemStatusService,
   updateOrderItemService,
   updateOrderService,
@@ -44,21 +45,34 @@ export const getOrderByIdController = async (req, res) => {
   });
 };
 
-export const createOrMergeOrderController = async (req, res) => {
+export const createOrderController = async (req, res) => {
   const payload = req.body;
   const user = req.user;
   const userId = req.user._id;
 
   payload.local.operator = user.name;
 
-  const { order, created } = await createOrMergeOrderService(payload, userId);
+  const order = await createOrderService(payload, userId);
 
-  res.status(created ? 201 : 200).json({
-    status: created ? 201 : 200,
-    message: created
-      ? 'Successfully created new order!'
-      : 'Order updated successfully!',
-    newOrder: order,
+  res.status(201).json({
+    status: 201,
+    message: 'Order successfully created!',
+    order,
+  });
+};
+
+export const mergeOrderController = async (req, res) => {
+  const payload = req.body;
+  const user = req.user;
+  const userId = req.user._id;
+
+  payload.local.operator = user.name;
+
+  const order = await mergeOrderService(payload, userId);
+  res.status(200).json({
+    status: 200,
+    message: 'Order successfully merged!',
+    order,
   });
 };
 

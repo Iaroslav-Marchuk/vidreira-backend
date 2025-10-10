@@ -1,11 +1,12 @@
 import { Router } from 'express';
 
 import {
-  createOrMergeOrderController,
+  createOrderController,
   deleteOrderController,
   deleteOrderItemController,
   getAllOrdersController,
   getOrderByIdController,
+  mergeOrderController,
   updateItemStatusController,
   updateOrderController,
   updateOrderItemController,
@@ -15,6 +16,7 @@ import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import { validateBody } from '../middlewares/validateBody.js';
 import {
   createOrderSchema,
+  mergeOrderSchema,
   updateOrderItemSchema,
   updateOrderSchema,
 } from '../validation/orderValidarion.js';
@@ -38,7 +40,15 @@ router.post(
   '/',
   checkRoles([ROLES.DUPLO]),
   validateBody(createOrderSchema),
-  ctrlWrapper(createOrMergeOrderController),
+  ctrlWrapper(createOrderController),
+);
+
+router.post(
+  '/:orderId',
+  checkRoles([ROLES.DUPLO]),
+  isValidId,
+  validateBody(mergeOrderSchema),
+  ctrlWrapper(mergeOrderController),
 );
 
 router.patch(

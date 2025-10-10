@@ -4,6 +4,7 @@ import { SORT_ORDER } from '../constants/constants.js';
 import createHttpError from 'http-errors';
 import { logOrderHistory } from '../utils/logOrderHistory.js';
 import { ClientModel } from '../models/clientModel.js';
+import { checkOrderExists } from '../utils/checkOrderExist.js';
 
 export const getAllOrdersService = async ({
   page,
@@ -43,58 +44,109 @@ export const getOrderByIdService = async (orderId) => {
   return order;
 };
 
-export const createOrMergeOrderService = async (payload, userId) => {
-  if (typeof payload.cliente === 'string') {
-    const client = await ClientModel.findOne({ name: payload.cliente });
-    if (!client) throw createHttpError(400, 'Invalid client name');
-    payload.cliente = client._id;
+// export const createOrMergeOrderService = async (payload, userId) => {
+//   if (typeof payload.cliente === 'string') {
+//     const client = await ClientModel.findOne({ name: payload.cliente });
+//     if (!client) throw createHttpError(400, 'Invalid client name');
+//     payload.cliente = client._id;
+//   }
+
+//   let existingOrder = await OrderModel.findOne({ EP: payload.EP }).populate(
+//     'cliente',
+//   );
+
+//   if (!existingOrder) {
+//     const order = await OrderModel.create(payload);
+//     await order.populate('cliente');
+
+//     await logOrderHistory({
+//       orderId: order._id,
+//       action: 'Order Criado',
+//       changedBy: userId,
+//       changes: {
+//         EP: order.EP,
+//         cliente: order.cliente,
+//         itemsCount: order.items.length,
+//       },
+//     });
+
+//     return { order, created: true };
+//   } else {
+//     existingOrder.items.push(...payload.items);
+//     await existingOrder.save();
+
+//     await logOrderHistory({
+//       orderId: existingOrder._id,
+//       action: 'Order corrigido',
+//       changedBy: userId,
+//       changes: {
+//         addedItemsCount: payload.items.length,
+//         addedItems: payload.items.map((i) => ({
+//           category: i.category,
+//           type: i.type,
+//           temper: i.temper,
+//           sizeX: i.sizeX,
+//           sizeY: i.sizeY,
+//           sizeZ: i.sizeZ,
+//           quantity: i.quantity,
+//         })),
+//       },
+//     });
+
+//     await existingOrder.populate('cliente');
+//     return { order: existingOrder, created: false };
+//   }
+// };
+
+export const createOrderService = async (payload, userId) => {
+  const { exists } = await checkOrderExists(payload.EP, payload.cliente);
+  if (exists) {
+    throw createHttpError(409, 'Order with this EP and client already exists');
   }
 
-  let existingOrder = await OrderModel.findOne({ EP: payload.EP }).populate(
-    'cliente',
-  );
+  const newOrder = await OrderModel.create(payload);
+  await newOrder.populate('cliente');
 
-  if (!existingOrder) {
-    const order = await OrderModel.create(payload);
-    await order.populate('cliente');
+  await logOrderHistory({
+    orderId: newOrder._id,
+    action: 'Order Criado',
+    changedBy: userId,
+    changes: {
+      EP: newOrder.EP,
+      cliente: newOrder.cliente,
+      itemsCount: newOrder.items.length,
+    },
+  });
 
-    await logOrderHistory({
-      orderId: order._id,
-      action: 'Order Criado',
-      changedBy: userId,
-      changes: {
-        EP: order.EP,
-        cliente: order.cliente,
-        itemsCount: order.items.length,
-      },
-    });
+  return newOrder;
+};
 
-    return { order, created: true };
-  } else {
-    existingOrder.items.push(...payload.items);
-    await existingOrder.save();
+export const mergeOrderService = async (payload, userId) => {
+  const { exists, order } = await checkOrderExists(payload.EP, payload.cliente);
+  if (!exists) throw createHttpError(404, 'Order not found for merge');
 
-    await logOrderHistory({
-      orderId: existingOrder._id,
-      action: 'Order corrigido',
-      changedBy: userId,
-      changes: {
-        addedItemsCount: payload.items.length,
-        addedItems: payload.items.map((i) => ({
-          category: i.category,
-          type: i.type,
-          temper: i.temper,
-          sizeX: i.sizeX,
-          sizeY: i.sizeY,
-          sizeZ: i.sizeZ,
-          quantity: i.quantity,
-        })),
-      },
-    });
+  order.items.push(...payload.items);
+  await order.save();
 
-    await existingOrder.populate('cliente');
-    return { order: existingOrder, created: false };
-  }
+  await logOrderHistory({
+    orderId: order._id,
+    action: 'Order corrigido',
+    changedBy: userId,
+    changes: {
+      addedItemsCount: payload.items.length,
+      addedItems: payload.items.map((i) => ({
+        category: i.category,
+        type: i.type,
+        temper: i.temper,
+        sizeX: i.sizeX,
+        sizeY: i.sizeY,
+        sizeZ: i.sizeZ,
+        quantity: i.quantity,
+      })),
+    },
+  });
+
+  return { merged: true, order };
 };
 
 // export const updateOrderService = async (orderId, payload, userId) => {
