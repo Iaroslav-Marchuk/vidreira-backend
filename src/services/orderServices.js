@@ -44,62 +44,19 @@ export const getOrderByIdService = async (orderId) => {
   return order;
 };
 
-// export const createOrMergeOrderService = async (payload, userId) => {
-//   if (typeof payload.cliente === 'string') {
-//     const client = await ClientModel.findOne({ name: payload.cliente });
-//     if (!client) throw createHttpError(400, 'Invalid client name');
-//     payload.cliente = client._id;
-//   }
-
-//   let existingOrder = await OrderModel.findOne({ EP: payload.EP }).populate(
-//     'cliente',
-//   );
-
-//   if (!existingOrder) {
-//     const order = await OrderModel.create(payload);
-//     await order.populate('cliente');
-
-//     await logOrderHistory({
-//       orderId: order._id,
-//       action: 'Order Criado',
-//       changedBy: userId,
-//       changes: {
-//         EP: order.EP,
-//         cliente: order.cliente,
-//         itemsCount: order.items.length,
-//       },
-//     });
-
-//     return { order, created: true };
-//   } else {
-//     existingOrder.items.push(...payload.items);
-//     await existingOrder.save();
-
-//     await logOrderHistory({
-//       orderId: existingOrder._id,
-//       action: 'Order corrigido',
-//       changedBy: userId,
-//       changes: {
-//         addedItemsCount: payload.items.length,
-//         addedItems: payload.items.map((i) => ({
-//           category: i.category,
-//           type: i.type,
-//           temper: i.temper,
-//           sizeX: i.sizeX,
-//           sizeY: i.sizeY,
-//           sizeZ: i.sizeZ,
-//           quantity: i.quantity,
-//         })),
-//       },
-//     });
-
-//     await existingOrder.populate('cliente');
-//     return { order: existingOrder, created: false };
-//   }
-// };
-
 export const createOrderService = async (payload, userId) => {
-  // Перевірка клієнта
+  const { EP, cliente } = payload;
+
+  const exists = await checkOrderExists(EP, cliente);
+  if (exists.exists) {
+    if (exists.exists) {
+      throw createHttpError(
+        409,
+        'Order with this EP and client already exists',
+      );
+    }
+  }
+
   let clientId = payload.cliente;
   if (typeof payload.cliente === 'string') {
     const client = await ClientModel.findOne({ name: payload.cliente });
@@ -107,13 +64,6 @@ export const createOrderService = async (payload, userId) => {
     clientId = client._id;
   }
 
-  // Перевірка існування замовлення
-  const { exists } = await checkOrderExists(payload.EP, clientId);
-  if (exists) {
-    throw createHttpError(409, 'Order with this EP and client already exists');
-  }
-
-  // Створення замовлення з ObjectId клієнта
   const newOrder = await OrderModel.create({
     ...payload,
     cliente: clientId,
@@ -131,11 +81,10 @@ export const createOrderService = async (payload, userId) => {
     },
   });
 
-  return newOrder;
+  return { order: newOrder };
 };
 
 export const mergeOrderService = async (payload, userId) => {
-  // Перевірка клієнта
   let clientId = payload.cliente;
   if (typeof payload.cliente === 'string') {
     const client = await ClientModel.findOne({ name: payload.cliente });
@@ -143,15 +92,13 @@ export const mergeOrderService = async (payload, userId) => {
     clientId = client._id;
   }
 
-  // Пошук існуючого замовлення
   const { exists, order } = await checkOrderExists(payload.EP, clientId);
   if (!exists) throw createHttpError(404, 'Order not found for merge');
 
-  // Додавання нових айтемів
   if (payload.items && payload.items.length > 0) {
     const itemsToAdd = payload.items.map((i) => ({
       ...i,
-      status: 'Criado', // обов’язково для нових айтемів
+      status: 'Criado',
     }));
     order.items.push(...itemsToAdd);
   }
@@ -180,76 +127,16 @@ export const mergeOrderService = async (payload, userId) => {
   return { merged: true, order };
 };
 
-// export const updateOrderService = async (orderId, payload, userId) => {
-//   const oldOrder = await OrderModel.findById(orderId);
-//   if (!oldOrder) {
-//     throw createHttpError(404, 'Order not found');
-//   }
-
-//   if (payload.cliente && typeof payload.cliente === 'string') {
-//     const client = await ClientModel.findOne({ name: payload.cliente });
-//     if (!client) throw createHttpError(400, 'Invalid client name');
-//     payload.cliente = client._id;
-//   }
-
-//   const isItemsInWork = oldOrder.items.some(
-//     (item) => item.status === 'Em produção' || item.status === 'Concluído',
-//   );
-
-//   if (isItemsInWork) {
-//     throw createHttpError(
-//       403,
-//       "Can't edit order with item status 'Em produção' or 'Concluído'",
-//     );
-//   }
-
-//   const allowedFields = ['EP', 'cliente', 'local'];
-//   const updateData = {};
-//   for (const key of allowedFields) {
-//     if (payload[key] !== undefined) {
-//       updateData[key] = payload[key];
-//     }
-//   }
-
-//   const updatedOrder = await OrderModel.findByIdAndUpdate(orderId, updateData, {
-//     new: true,
-//   }).populate('cliente');
-
-//   const changes = {};
-
-//   for (const key in updateData) {
-//     if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
-//       changes[key] = {
-//         old: oldOrder[key],
-//         new: updatedOrder[key],
-//       };
-//     }
-//   }
-
-//   if (Object.keys(changes).length > 0) {
-//     await logOrderHistory({
-//       orderId,
-//       action: 'Order corrigido',
-//       changedBy: userId,
-//       changes,
-//     });
-//   }
-
-//   return updatedOrder;
-// };
-
 export const updateOrderService = async (orderId, payload, userId) => {
   const oldOrder = await OrderModel.findById(orderId);
   if (!oldOrder) throw createHttpError(404, 'Order not found');
 
-  // Перевірка клієнта
   if (payload.cliente && typeof payload.cliente === 'string') {
     const client = await ClientModel.findOne({ name: payload.cliente });
     if (!client) throw createHttpError(400, 'Invalid client name');
     payload.cliente = client._id;
   }
 
-  // Перевірка існуючих айтемів в роботі
   const isItemsInWork = oldOrder.items.some(
     (item) => item.status === 'Em produção' || item.status === 'Concluído',
   );
@@ -264,7 +151,6 @@ export const updateOrderService = async (orderId, payload, userId) => {
   const allowedFields = ['EP', 'cliente', 'local'];
   const updateOps = {};
 
-  // $set — тільки для основних полів
   const setData = {};
   for (const key of allowedFields) {
     if (payload[key] !== undefined) {
@@ -275,7 +161,6 @@ export const updateOrderService = async (orderId, payload, userId) => {
     updateOps.$set = setData;
   }
 
-  // $push — якщо додаємо нові айтеми
   if (
     payload.items &&
     Array.isArray(payload.items) &&
@@ -283,7 +168,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
   ) {
     const itemsToAdd = payload.items.map((i) => ({
       ...i,
-      status: 'Criado', // обов’язково для нових айтемів
+      status: 'Criado',
     }));
     updateOps.$push = { items: { $each: itemsToAdd } };
   }
@@ -292,7 +177,6 @@ export const updateOrderService = async (orderId, payload, userId) => {
     new: true,
   }).populate('cliente');
 
-  // Лог змін
   const changes = {};
   for (const key in setData) {
     if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {

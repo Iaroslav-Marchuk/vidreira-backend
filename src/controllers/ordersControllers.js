@@ -52,7 +52,7 @@ export const createOrderController = async (req, res) => {
 
   payload.local.operator = user.name;
 
-  const order = await createOrderService(payload, userId);
+  const { order } = await createOrderService(payload, userId);
 
   res.status(201).json({
     status: 201,
