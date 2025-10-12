@@ -1,6 +1,3 @@
-const ZONAS = ['L1', 'L2', 'L3'];
-const STATUSES = ['created', 'inProgress', 'completed'];
-
 function parseNumber(value) {
   const isString = typeof value === 'string';
   if (!isString) return;
@@ -12,28 +9,9 @@ function parseNumber(value) {
   return parsedNumber;
 }
 
-function parseZona(zona) {
-  const isString = typeof zona === 'string';
-  if (!isString) return;
-
-  const isZona = (zona) => ZONAS.includes(zona);
-
-  if (isZona(zona)) return zona;
-}
-
-function parseStatus(status) {
-  const isString = typeof status === 'string';
-  if (!isString) return;
-
-  const isStatus = (status) => STATUSES.includes(status);
-
-  if (isStatus(status)) return status;
-}
-
-function parseIsTemper(temper) {
-  if (temper === 'true') return true;
-  if (temper === 'false') return false;
-  return undefined;
+function parseCliente(cliente) {
+  if (!cliente) return undefined;
+  return cliente.trim(); // залишаємо рядком, бо це ім'я
 }
 
 const parseDate = (dateValue) => {
@@ -42,39 +20,22 @@ const parseDate = (dateValue) => {
 };
 
 export const parseFilterParams = (query) => {
-  const {
-    EP,
-    cliente,
-    zona,
-    operator,
-    status,
-    category,
-    type,
-    temper,
-    sizeZ,
-    createdAt,
-  } = query;
+  const { EP, cliente, operator, category, type, sizeZ, createdAt } = query;
 
   const parsedEP = parseNumber(EP);
-  const parsedCliente = parseNumber(cliente);
-  const parsedZona = parseZona(zona);
+  const parsedCliente = parseCliente(cliente);
   const parsedOperator = parseNumber(operator);
-  const parsedStatus = parseStatus(status);
   const parsedCategory = parseNumber(category);
   const parsedType = parseNumber(type);
-  const parsedTemper = parseIsTemper(temper);
   const parsedSizeZ = parseNumber(sizeZ);
   const parsedCreatedAt = parseDate(createdAt);
 
   return {
     EP: parsedEP,
     cliente: parsedCliente,
-    zona: parsedZona,
     operator: parsedOperator,
-    status: parsedStatus,
     category: parsedCategory,
     type: parsedType,
-    temper: parsedTemper,
     sizeZ: parsedSizeZ,
     createdAt: parsedCreatedAt,
   };

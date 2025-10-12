@@ -1,54 +1,52 @@
-const keys = ['EP', 'cliente', 'local.zona', 'createdAt', 'status'];
+const allowedKeys = [
+  'EP',
+  'cliente',
+  'local.zona',
+  'createdAt',
+  'status',
+  'falta',
+];
 
-function parseSortBy(sortBy) {
-  if (typeof sortBy === 'undefined') {
-    return 'createdAt';
-  }
+export const parseSortBy = (sortBy) =>
+  allowedKeys.includes(sortBy) ? sortBy : 'createdAt';
 
-  return keys.includes(sortBy) ? sortBy : 'createdAt';
-}
-
-function parseSortOrder(sortOrder) {
-  if (typeof sortOrder === 'undefined') {
-    return 'asc';
-  }
-
-  return sortOrder === 'desc' ? 'desc' : 'asc';
-}
+export const parseSortOrder = (sortOrder) =>
+  sortOrder === 'desc' ? 'desc' : 'asc';
 
 export const parseSortParams = (query) => {
   const { sortBy, sortOrder } = query;
-
-  const parsedSortBy = parseSortBy(sortBy);
-  const parsedSortOrder = parseSortOrder(sortOrder);
-
   return {
-    sortBy: parsedSortBy,
-    sortOrder: parsedSortOrder,
+    sortBy: parseSortBy(sortBy),
+    sortOrder: parseSortOrder(sortOrder),
   };
 };
 
-export const sortOrders = (orders, sortBy, sortOrder = 'asc') => {
-  return [...orders].sort((a, b) => {
-    // Допоміжна функція для вкладених полів
-    const getValue = (obj, key) =>
-      key.split('.').reduce((acc, k) => acc?.[k], obj);
+const getValue = (obj, key) => key.split('.').reduce((acc, k) => acc?.[k], obj);
 
-    // Сортування по клієнту
-    if (sortBy === 'cliente') {
+export const sortOrders = (orders, sortBy = 'createdAt', sortOrder = 'asc') => {
+  if (!Array.isArray(orders)) return [];
+
+  const sortedOrders = [...orders];
+
+  if (sortBy === 'cliente') {
+    return sortedOrders.sort((a, b) => {
       const nameA = a.cliente?.name?.toLowerCase() || '';
       const nameB = b.cliente?.name?.toLowerCase() || '';
       return sortOrder === 'asc'
         ? nameA.localeCompare(nameB)
         : nameB.localeCompare(nameA);
-    }
+    });
+  }
 
-    // Сортування по обчислюваному полі "falta"
-    if (sortBy === 'falta') {
-      return sortOrder === 'asc' ? a.falta - b.falta : b.falta - a.falta;
-    }
+  if (sortBy === 'falta') {
+    return sortedOrders.sort((a, b) => {
+      const aVal = Number(a.falta || 0);
+      const bVal = Number(b.falta || 0);
+      return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+  }
 
-    // Інші поля
+  return sortedOrders.sort((a, b) => {
     const valA = getValue(a, sortBy);
     const valB = getValue(b, sortBy);
 
@@ -58,6 +56,8 @@ export const sortOrders = (orders, sortBy, sortOrder = 'asc') => {
         : valB.localeCompare(valA);
     }
 
-    return sortOrder === 'asc' ? valA - valB : valB - valA;
+    return sortOrder === 'asc'
+      ? (valA || 0) - (valB || 0)
+      : (valB || 0) - (valA || 0);
   });
 };

@@ -5,35 +5,145 @@ import createHttpError from 'http-errors';
 import { logOrderHistory } from '../utils/logOrderHistory.js';
 import { ClientModel } from '../models/clientModel.js';
 import { checkOrderExists } from '../utils/checkOrderExist.js';
+import { sortOrders } from '../utils/parseSortParams.js';
+
+// export const getAllOrdersService = async ({
+//   page,
+//   perPage,
+//   sortBy = 'createdAt',
+//   sortOrder = SORT_ORDER.DESC,
+//   filter = {},
+// }) => {
+//   const limitValue = perPage;
+//   const skipValue = (page - 1) * perPage;
+
+//   const cleanFilter = Object.fromEntries(
+//     Object.entries(filter).filter(([, value]) => value !== undefined),
+//   );
+
+//   const ordersQuery = OrderModel.find(cleanFilter).populate('cliente');
+
+//   const ordersCount = await OrderModel.find(cleanFilter)
+//     .merge(ordersQuery)
+//     .countDocuments();
+
+//   let orders = await ordersQuery
+//     .skip(skipValue)
+//     .sort(sortBy === 'cliente' ? {} : { [sortBy]: sortOrder })
+//     .limit(limitValue);
+
+//   if (['cliente', 'falta'].includes(sortBy)) {
+//     orders = sortOrders(orders, sortBy, sortOrder);
+//   }
+
+//   const paginationData = calculatePaginationData(ordersCount, page, perPage);
+
+//   return { data: orders, ...paginationData };
+// };
+
+// export const getAllOrdersService = async ({
+//   page = 1,
+//   perPage = 10,
+//   sortBy = 'createdAt',
+//   sortOrder = SORT_ORDER,
+//   filter = {},
+// }) => {
+//   const limitValue = Number(perPage);
+//   const skipValue = (Number(page) - 1) * limitValue;
+
+//   const cleanFilter = Object.fromEntries(
+//     Object.entries(filter).filter(([, value]) => value !== undefined),
+//   );
+
+//   const sortStage = {};
+//   if (sortBy === 'cliente') {
+//     sortStage['cliente.name'] = sortOrder === 'asc' ? 1 : -1;
+//   } else {
+//     sortStage[sortBy] = sortOrder === 'asc' ? 1 : -1;
+//   }
+
+//   const pipeline = [
+//     { $match: cleanFilter },
+//     {
+//       $lookup: {
+//         from: 'clients',
+//         localField: 'cliente',
+//         foreignField: '_id',
+//         as: 'cliente',
+//       },
+//     },
+//     { $unwind: { path: '$cliente', preserveNullAndEmptyArrays: true } },
+//     { $sort: sortStage },
+//     { $skip: skipValue },
+//     { $limit: limitValue },
+//   ];
+
+//   const ordersCount = await OrderModel.countDocuments(cleanFilter);
+
+//   const orders = await OrderModel.aggregate(pipeline);
+
+//   const paginationData = calculatePaginationData(ordersCount, page, perPage);
+
+//   return {
+//     data: orders,
+//     ...paginationData,
+//   };
+// };
 
 export const getAllOrdersService = async ({
-  page,
-  perPage,
+  page = 1,
+  perPage = 10,
   sortBy = 'createdAt',
   sortOrder = SORT_ORDER.DESC,
   filter = {},
 }) => {
-  const limitValue = perPage;
-  const skipValue = (page - 1) * perPage;
+  const limitValue = Number(perPage);
+  const skipValue = (Number(page) - 1) * limitValue;
 
+  const { cliente, ...otherFilters } = filter;
   const cleanFilter = Object.fromEntries(
-    Object.entries(filter).filter(([, value]) => value !== undefined),
+    Object.entries(otherFilters).filter(([, value]) => value !== undefined),
   );
 
-  const ordersQuery = OrderModel.find(cleanFilter).populate('cliente');
+  const pipeline = [
+    { $match: cleanFilter },
+    {
+      $lookup: {
+        from: 'clients',
+        localField: 'cliente',
+        foreignField: '_id',
+        as: 'cliente',
+      },
+    },
+    { $unwind: { path: '$cliente', preserveNullAndEmptyArrays: true } },
+  ];
 
-  const ordersCount = await OrderModel.find(cleanFilter)
-    .merge(ordersQuery)
-    .countDocuments();
+  // Пошук по імені клієнта
+  if (cliente) {
+    pipeline.push({
+      $match: {
+        'cliente.name': { $regex: cliente, $options: 'i' },
+      },
+    });
+  }
 
-  const orders = await ordersQuery
-    .skip(skipValue)
-    .limit(limitValue)
-    .sort({ [sortBy]: sortOrder });
+  let orders = await OrderModel.aggregate(pipeline);
 
+  orders = orders.map((order) => {
+    const falta = (order.items || [])
+      .filter((item) => item.status !== 'Concluído')
+      .reduce((total, item) => total + Number(item.quantity || 0), 0);
+
+    return { ...order, falta };
+  });
+
+  orders = sortOrders(orders, sortBy, sortOrder);
+
+  const ordersCount = orders.length;
+  const paginatedOrders = orders.slice(skipValue, skipValue + limitValue);
   const paginationData = calculatePaginationData(ordersCount, page, perPage);
 
-  return { data: orders, ...paginationData };
+  return { data: paginatedOrders, ...paginationData };
 };
 
 export const getOrderByIdService = async (orderId) => {
