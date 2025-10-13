@@ -70,7 +70,7 @@ router.patch(
 );
 
 router.patch(
-  '/:orderId/status',
+  '/:orderId/:itemId/status',
   isValidId,
   checkRoleUpdateStatus,
   ctrlWrapper(updateItemStatusController),

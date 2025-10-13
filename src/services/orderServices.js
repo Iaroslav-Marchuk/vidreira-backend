@@ -511,6 +511,8 @@ export const updateItemStatusService = async (
     { new: true },
   ).populate('cliente');
 
+  console.log('Updated order found:', updatedOrder);
+
   await logOrderHistory({
     orderId,
     itemId,
