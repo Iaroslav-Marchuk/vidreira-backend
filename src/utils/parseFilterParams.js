@@ -11,7 +11,7 @@ function parseNumber(value) {
 
 function parseCliente(cliente) {
   if (!cliente) return undefined;
-  return cliente.trim(); // залишаємо рядком, бо це ім'я
+  return cliente.trim();
 }
 
 const parseDate = (dateValue) => {

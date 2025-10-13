@@ -118,7 +118,6 @@ export const getAllOrdersService = async ({
     { $unwind: { path: '$cliente', preserveNullAndEmptyArrays: true } },
   ];
 
-  // Пошук по імені клієнта
   if (cliente) {
     pipeline.push({
       $match: {
@@ -145,6 +144,70 @@ export const getAllOrdersService = async ({
 
   return { data: paginatedOrders, ...paginationData };
 };
+
+// export const getAllOrdersService = async ({
+//   page = 1,
+//   perPage = 10,
+//   sortBy = 'createdAt',
+//   sortOrder = SORT_ORDER.DESC,
+//   filter = {},
+// }) => {
+//   const limitValue = Number(perPage);
+//   const skipValue = (Number(page) - 1) * limitValue;
+
+//   const cleanFilter = Object.fromEntries(
+//     Object.entries(filter).filter(
+//       ([, value]) => value !== undefined && value !== '',
+//     ),
+//   );
+
+//   const pipeline = [
+//     // фільтруємо тільки відомі поля (без cliente)
+//     {
+//       $match: Object.fromEntries(
+//         Object.entries(cleanFilter).filter(([key]) => key !== 'cliente'),
+//       ),
+//     },
+//     {
+//       $lookup: {
+//         from: 'clients',
+//         localField: 'cliente',
+//         foreignField: '_id',
+//         as: 'cliente',
+//       },
+//     },
+//     { $unwind: { path: '$cliente', preserveNullAndEmptyArrays: true } },
+//   ];
+
+//   // Якщо шукаємо по імені клієнта
+//   if (cleanFilter.cliente) {
+//     pipeline.push({
+//       $match: {
+//         'cliente.name': { $regex: cleanFilter.cliente, $options: 'i' },
+//       },
+//     });
+//   }
+
+//   let orders = await OrderModel.aggregate(pipeline);
+
+//   // додаємо розрахунок 'falta'
+//   orders = orders.map((order) => {
+//     const falta = (order.items || [])
+//       .filter((item) => item.status !== 'Concluído')
+//       .reduce((total, item) => total + Number(item.quantity || 0), 0);
+//     return { ...order, falta };
+//   });
+
+//   // сортуємо локально (вже після додавання falta)
+//   orders = sortOrders(orders, sortBy, sortOrder);
+
+//   // пагінація після сортування
+//   const ordersCount = orders.length;
+//   const paginatedOrders = orders.slice(skipValue, skipValue + limitValue);
+//   const paginationData = calculatePaginationData(ordersCount, page, perPage);
+
+//   return { data: paginatedOrders, ...paginationData };
+// };
 
 export const getOrderByIdService = async (orderId) => {
   const order = await OrderModel.findById(orderId).populate('cliente');
