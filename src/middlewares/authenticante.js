@@ -13,7 +13,8 @@ export const authenticante = async (req, res, next) => {
   const [bearer, token] = authorization.split(' ', 2);
 
   if (bearer !== 'Bearer' || !token) {
-    throw createHttpError(401, ' Auth header should be of type Bearer');
+    next(createHttpError(401, ' Auth header should be of type Bearer'));
+    return;
   }
 
   const session = await SessionModel.findOne({ accessToken: token });
@@ -37,8 +38,6 @@ export const authenticante = async (req, res, next) => {
     next(createHttpError(401, 'User not found!'));
     return;
   }
-
-  console.log('Authenticated user role:', user.role);
 
   req.user = user;
   next();

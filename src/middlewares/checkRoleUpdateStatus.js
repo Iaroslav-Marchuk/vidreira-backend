@@ -1,12 +1,14 @@
-import createHttpError from 'http-errors';
+// ----------------треба видалити--------
 
-export const checkRoleUpdateStatus = (req, res, next) => {
-  const { role } = req.user;
-  const allowedRoles = ['duplo', 'corte'];
+// import createHttpError from 'http-errors';
 
-  if (!allowedRoles.includes(role)) {
-    next(createHttpError(403, 'Access denied: insufficient role'));
-    return;
-  }
-  next();
-};
+// export const checkRoleUpdateStatus = (req, res, next) => {
+//   const { role } = req.user;
+//   const allowedRoles = ['duplo', 'corte'];
+
+//   if (!allowedRoles.includes(role)) {
+//     next(createHttpError(403, 'Access denied: insufficient role'));
+//     return;
+//   }
+//   next();
+// };

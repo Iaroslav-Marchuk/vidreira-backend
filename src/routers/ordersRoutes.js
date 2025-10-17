@@ -22,11 +22,11 @@ import {
 } from '../validation/orderValidarion.js';
 import { isValidId } from '../middlewares/isValidId.js';
 import { authenticante } from '../middlewares/authenticante.js';
-import { checkRoles } from '../middlewares/checkRoles.js';
-import { ROLES } from '../constants/constants.js';
 import { checkEditableStatus } from '../middlewares/checkEditableStatus.js';
-import { checkRoleUpdateStatus } from '../middlewares/checkRoleUpdateStatus.js';
 import { checkDeletableStatus } from '../middlewares/checkDeletableStatus.js';
+import { checkPermission } from '../middlewares/checkPermission.js';
+import { checkOwner } from '../middlewares/checkOwner.js';
+import { checkPermissionStatus } from '../middlewares/checkPermissionStatus.js';
 
 const router = Router();
 
@@ -38,14 +38,15 @@ router.get('/:orderId', isValidId, ctrlWrapper(getOrderByIdController));
 
 router.post(
   '/',
-  checkRoles([ROLES.DUPLO]),
+  checkPermission('create'),
   validateBody(createOrderSchema),
   ctrlWrapper(createOrderController),
 );
 
 router.post(
   '/:orderId',
-  checkRoles([ROLES.DUPLO]),
+  checkPermission('edit'),
+  checkOwner,
   isValidId,
   validateBody(mergeOrderSchema),
   ctrlWrapper(mergeOrderController),
@@ -53,7 +54,8 @@ router.post(
 
 router.patch(
   '/:orderId',
-  checkRoles([ROLES.DUPLO]),
+  checkPermission('edit'),
+  checkOwner,
   isValidId,
   checkEditableStatus,
   validateBody(updateOrderSchema),
@@ -62,7 +64,8 @@ router.patch(
 
 router.patch(
   '/:orderId/:itemId',
-  checkRoles([ROLES.DUPLO]),
+  checkPermission('edit'),
+  checkOwner,
   isValidId,
   checkEditableStatus,
   validateBody(updateOrderItemSchema),
@@ -72,13 +75,14 @@ router.patch(
 router.patch(
   '/:orderId/:itemId/status',
   isValidId,
-  checkRoleUpdateStatus,
+  checkPermissionStatus,
   ctrlWrapper(updateItemStatusController),
 );
 
 router.delete(
   '/:orderId',
-  checkRoles([ROLES.DUPLO]),
+  checkPermission('delete'),
+  checkOwner,
   isValidId,
   checkDeletableStatus,
   ctrlWrapper(deleteOrderController),
@@ -86,7 +90,8 @@ router.delete(
 
 router.delete(
   '/:orderId/:itemId',
-  checkRoles([ROLES.DUPLO]),
+  checkPermission('delete'),
+  checkOwner,
   isValidId,
   checkDeletableStatus,
   ctrlWrapper(deleteOrderItemController),

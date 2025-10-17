@@ -9,9 +9,9 @@ function parseNumber(value) {
   return parsedNumber;
 }
 
-function parseCliente(cliente) {
-  if (!cliente) return undefined;
-  return cliente.trim();
+function parseClient(client) {
+  if (!client) return undefined;
+  return client.trim();
 }
 
 const parseDate = (dateValue) => {
@@ -20,10 +20,10 @@ const parseDate = (dateValue) => {
 };
 
 export const parseFilterParams = (query) => {
-  const { EP, cliente, operator, category, type, sizeZ, createdAt } = query;
+  const { EP, client, operator, category, type, sizeZ, createdAt } = query;
 
   const parsedEP = parseNumber(EP);
-  const parsedCliente = parseCliente(cliente);
+  const parsedClient = parseClient(client);
   const parsedOperator = parseNumber(operator);
   const parsedCategory = parseNumber(category);
   const parsedType = parseNumber(type);
@@ -32,7 +32,7 @@ export const parseFilterParams = (query) => {
 
   return {
     EP: parsedEP,
-    cliente: parsedCliente,
+    client: parsedClient,
     operator: parsedOperator,
     category: parsedCategory,
     type: parsedType,

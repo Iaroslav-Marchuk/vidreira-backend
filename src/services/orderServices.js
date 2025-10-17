@@ -1,94 +1,14 @@
-import { OrderModel } from '../models/orderModel.js';
-import { calculatePaginationData } from '../utils/calculatePaginationData.js';
-import { SORT_ORDER } from '../constants/constants.js';
 import createHttpError from 'http-errors';
-import { logOrderHistory } from '../utils/logOrderHistory.js';
+
+import { OrderModel } from '../models/orderModel.js';
 import { ClientModel } from '../models/clientModel.js';
+
+import { SORT_ORDER } from '../constants/constants.js';
+
+import { calculatePaginationData } from '../utils/calculatePaginationData.js';
+import { logOrderHistory } from '../utils/logOrderHistory.js';
 import { checkOrderExists } from '../utils/checkOrderExist.js';
 import { sortOrders } from '../utils/parseSortParams.js';
-
-// export const getAllOrdersService = async ({
-//   page,
-//   perPage,
-//   sortBy = 'createdAt',
-//   sortOrder = SORT_ORDER.DESC,
-//   filter = {},
-// }) => {
-//   const limitValue = perPage;
-//   const skipValue = (page - 1) * perPage;
-
-//   const cleanFilter = Object.fromEntries(
-//     Object.entries(filter).filter(([, value]) => value !== undefined),
-//   );
-
-//   const ordersQuery = OrderModel.find(cleanFilter).populate('cliente');
-
-//   const ordersCount = await OrderModel.find(cleanFilter)
-//     .merge(ordersQuery)
-//     .countDocuments();
-
-//   let orders = await ordersQuery
-//     .skip(skipValue)
-//     .sort(sortBy === 'cliente' ? {} : { [sortBy]: sortOrder })
-//     .limit(limitValue);
-
-//   if (['cliente', 'falta'].includes(sortBy)) {
-//     orders = sortOrders(orders, sortBy, sortOrder);
-//   }
-
-//   const paginationData = calculatePaginationData(ordersCount, page, perPage);
-
-//   return { data: orders, ...paginationData };
-// };
-
-// export const getAllOrdersService = async ({
-//   page = 1,
-//   perPage = 10,
-//   sortBy = 'createdAt',
-//   sortOrder = SORT_ORDER,
-//   filter = {},
-// }) => {
-//   const limitValue = Number(perPage);
-//   const skipValue = (Number(page) - 1) * limitValue;
-
-//   const cleanFilter = Object.fromEntries(
-//     Object.entries(filter).filter(([, value]) => value !== undefined),
-//   );
-
-//   const sortStage = {};
-//   if (sortBy === 'cliente') {
-//     sortStage['cliente.name'] = sortOrder === 'asc' ? 1 : -1;
-//   } else {
-//     sortStage[sortBy] = sortOrder === 'asc' ? 1 : -1;
-//   }
-
-//   const pipeline = [
-//     { $match: cleanFilter },
-//     {
-//       $lookup: {
-//         from: 'clients',
-//         localField: 'cliente',
-//         foreignField: '_id',
-//         as: 'cliente',
-//       },
-//     },
-//     { $unwind: { path: '$cliente', preserveNullAndEmptyArrays: true } },
-//     { $sort: sortStage },
-//     { $skip: skipValue },
-//     { $limit: limitValue },
-//   ];
-
-//   const ordersCount = await OrderModel.countDocuments(cleanFilter);
-
-//   const orders = await OrderModel.aggregate(pipeline);
-
-//   const paginationData = calculatePaginationData(ordersCount, page, perPage);
-
-//   return {
-//     data: orders,
-//     ...paginationData,
-//   };
-// };
 
 export const getAllOrdersService = async ({
   page = 1,
@@ -100,7 +20,7 @@ export const getAllOrdersService = async ({
   const limitValue = Number(perPage);
   const skipValue = (Number(page) - 1) * limitValue;
 
-  const { cliente, ...otherFilters } = filter;
+  const { client, ...otherFilters } = filter;
   const cleanFilter = Object.fromEntries(
     Object.entries(otherFilters).filter(([, value]) => value !== undefined),
   );
@@ -110,18 +30,18 @@ export const getAllOrdersService = async ({
     {
       $lookup: {
         from: 'clients',
-        localField: 'cliente',
+        localField: 'client',
         foreignField: '_id',
-        as: 'cliente',
+        as: 'client',
       },
     },
-    { $unwind: { path: '$cliente', preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: '$client', preserveNullAndEmptyArrays: true } },
   ];
 
-  if (cliente) {
+  if (client) {
     pipeline.push({
       $match: {
-        'cliente.name': { $regex: cliente, $options: 'i' },
+        'client.name': { $regex: client, $options: 'i' },
       },
     });
   }
@@ -145,72 +65,8 @@ export const getAllOrdersService = async ({
   return { data: paginatedOrders, ...paginationData };
 };
 
-// export const getAllOrdersService = async ({
-//   page = 1,
-//   perPage = 10,
-//   sortBy = 'createdAt',
-//   sortOrder = SORT_ORDER.DESC,
-//   filter = {},
-// }) => {
-//   const limitValue = Number(perPage);
-//   const skipValue = (Number(page) - 1) * limitValue;
-
-//   const cleanFilter = Object.fromEntries(
-//     Object.entries(filter).filter(
-//       ([, value]) => value !== undefined && value !== '',
-//     ),
-//   );
-
-//   const pipeline = [
-//     // фільтруємо тільки відомі поля (без cliente)
-//     {
-//       $match: Object.fromEntries(
-//         Object.entries(cleanFilter).filter(([key]) => key !== 'cliente'),
-//       ),
-//     },
-//     {
-//       $lookup: {
-//         from: 'clients',
-//         localField: 'cliente',
-//         foreignField: '_id',
-//         as: 'cliente',
-//       },
-//     },
-//     { $unwind: { path: '$cliente', preserveNullAndEmptyArrays: true } },
-//   ];
-
-//   // Якщо шукаємо по імені клієнта
-//   if (cleanFilter.cliente) {
-//     pipeline.push({
-//       $match: {
-//         'cliente.name': { $regex: cleanFilter.cliente, $options: 'i' },
-//       },
-//     });
-//   }
-
-//   let orders = await OrderModel.aggregate(pipeline);
-
-//   // додаємо розрахунок 'falta'
-//   orders = orders.map((order) => {
-//     const falta = (order.items || [])
-//       .filter((item) => item.status !== 'Concluído')
-//       .reduce((total, item) => total + Number(item.quantity || 0), 0);
-//     return { ...order, falta };
-//   });
-
-//   // сортуємо локально (вже після додавання falta)
-//   orders = sortOrders(orders, sortBy, sortOrder);
-
-//   // пагінація після сортування
-//   const ordersCount = orders.length;
-//   const paginatedOrders = orders.slice(skipValue, skipValue + limitValue);
-//   const paginationData = calculatePaginationData(ordersCount, page, perPage);
-
-//   return { data: paginatedOrders, ...paginationData };
-// };
-
 export const getOrderByIdService = async (orderId) => {
-  const order = await OrderModel.findById(orderId).populate('cliente');
+  const order = await OrderModel.findById(orderId).populate('client');
   if (!order) {
     throw createHttpError(404, 'Order not found!');
   }
@@ -218,30 +74,27 @@ export const getOrderByIdService = async (orderId) => {
 };
 
 export const createOrderService = async (payload, userId) => {
-  const { EP, cliente } = payload;
+  const { EP, client } = payload;
 
-  const exists = await checkOrderExists(EP, cliente);
+  const exists = await checkOrderExists(EP, client);
   if (exists.exists) {
-    if (exists.exists) {
-      throw createHttpError(
-        409,
-        'Order with this EP and client already exists',
-      );
-    }
+    throw createHttpError(409, 'Order with this EP and client already exists');
   }
 
-  let clientId = payload.cliente;
-  if (typeof payload.cliente === 'string') {
-    const client = await ClientModel.findOne({ name: payload.cliente });
-    if (!client) throw createHttpError(400, 'Invalid client name');
-    clientId = client._id;
+  let clientId = client;
+  if (typeof client === 'string') {
+    const foundClient = await ClientModel.findOne({ name: client });
+    if (!foundClient) throw createHttpError(400, 'Invalid client name');
+    clientId = foundClient._id;
   }
 
   const newOrder = await OrderModel.create({
     ...payload,
-    cliente: clientId,
+    client: clientId,
+    owner: userId,
   });
-  await newOrder.populate('cliente');
+
+  await newOrder.populate('client');
 
   await logOrderHistory({
     orderId: newOrder._id,
@@ -249,7 +102,7 @@ export const createOrderService = async (payload, userId) => {
     changedBy: userId,
     changes: {
       EP: newOrder.EP,
-      cliente: newOrder.cliente,
+      client: newOrder.client,
       itemsCount: newOrder.items.length,
     },
   });
@@ -257,15 +110,51 @@ export const createOrderService = async (payload, userId) => {
   return { order: newOrder };
 };
 
-export const mergeOrderService = async (payload, userId) => {
-  let clientId = payload.cliente;
-  if (typeof payload.cliente === 'string') {
-    const client = await ClientModel.findOne({ name: payload.cliente });
-    if (!client) throw createHttpError(400, 'Invalid client name');
-    clientId = client._id;
-  }
+// export const mergeOrderService = async (payload, userId) => {
+//   let clientId = payload.client;
+//   if (typeof payload.client === 'string') {
+//     const client = await ClientModel.findOne({ name: payload.client });
+//     if (!client) throw createHttpError(400, 'Invalid client name');
+//     clientId = client._id;
+//   }
 
-  const { exists, order } = await checkOrderExists(payload.EP, clientId);
+//   const { exists, order } = await checkOrderExists(payload.EP, clientId);
+//   if (!exists) throw createHttpError(404, 'Order not found for merge');
+
+//   if (payload.items && payload.items.length > 0) {
+//     const itemsToAdd = payload.items.map((i) => ({
+//       ...i,
+//       status: 'Criado',
+//     }));
+//     order.items.push(...itemsToAdd);
+//   }
+
+//   await order.save();
+//   await order.populate('client');
+
+//   await logOrderHistory({
+//     orderId: order._id,
+//     action: 'Order corrigido',
+//     changedBy: userId,
+//     changes: {
+//       addedItemsCount: payload.items?.length || 0,
+//       addedItems: payload.items?.map((i) => ({
+//         category: i.category,
+//         type: i.type,
+//         temper: i.temper,
+//         sizeX: i.sizeX,
+//         sizeY: i.sizeY,
+//         sizeZ: i.sizeZ,
+//         quantity: i.quantity,
+//       })),
+//     },
+//   });
+
+//   return { merged: true, order };
+// };
+
+export const mergeOrderService = async (payload, userId) => {
+  const { exists, order } = await checkOrderExists(payload.EP, payload.client);
   if (!exists) throw createHttpError(404, 'Order not found for merge');
 
   if (payload.items && payload.items.length > 0) {
@@ -277,15 +166,15 @@ export const mergeOrderService = async (payload, userId) => {
   }
 
   await order.save();
-  await order.populate('cliente');
+  await order.populate('client');
 
   await logOrderHistory({
     orderId: order._id,
     action: 'Order corrigido',
     changedBy: userId,
     changes: {
-      addedItemsCount: payload.items?.length || 0,
-      addedItems: payload.items?.map((i) => ({
+      addedItemsCount: payload.items.length || 0,
+      addedItems: payload.items.map((i) => ({
         category: i.category,
         type: i.type,
         temper: i.temper,
@@ -304,10 +193,10 @@ export const updateOrderService = async (orderId, payload, userId) => {
   const oldOrder = await OrderModel.findById(orderId);
   if (!oldOrder) throw createHttpError(404, 'Order not found');
 
-  if (payload.cliente && typeof payload.cliente === 'string') {
-    const client = await ClientModel.findOne({ name: payload.cliente });
+  if (payload.client && typeof payload.client === 'string') {
+    const client = await ClientModel.findOne({ name: payload.client });
     if (!client) throw createHttpError(400, 'Invalid client name');
-    payload.cliente = client._id;
+    payload.client = client._id;
   }
 
   const isItemsInWork = oldOrder.items.some(
@@ -321,7 +210,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
     );
   }
 
-  const allowedFields = ['EP', 'cliente', 'local'];
+  const allowedFields = ['EP', 'client', 'local'];
   const updateOps = {};
 
   const setData = {};
@@ -348,7 +237,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
 
   const updatedOrder = await OrderModel.findByIdAndUpdate(orderId, updateOps, {
     new: true,
-  }).populate('cliente');
+  }).populate('client');
 
   const changes = {};
   for (const key in setData) {
@@ -420,7 +309,7 @@ export const updateOrderItemService = async (
     { _id: orderId, 'items._id': itemId },
     { $set: updateItem },
     { new: true },
-  ).populate('cliente');
+  ).populate('client');
 
   const changes = {};
   for (const key of allowedFields) {
@@ -486,7 +375,7 @@ export const deleteOrderItemService = async (orderId, itemId, userId) => {
     orderId,
     { $pull: { items: { _id: itemId } } },
     { new: true },
-  ).populate('cliente');
+  ).populate('client');
 
   return { updatedOrder: updatedOrder, deletedItemId: itemId };
 };
@@ -503,13 +392,13 @@ export const updateItemStatusService = async (
   const oldItem = order.items.find((i) => i._id.toString() === itemId);
   if (!oldItem) throw createHttpError(404, 'Item not found');
 
-  if (oldItem.status === newStatus) return await order.populate('cliente');
+  if (oldItem.status === newStatus) return await order.populate('client');
 
   const updatedOrder = await OrderModel.findOneAndUpdate(
     { _id: orderId, 'items._id': itemId },
     { $set: { 'items.$.status': newStatus } },
     { new: true },
-  ).populate('cliente');
+  ).populate('client');
 
   console.log('Updated order found:', updatedOrder);
 

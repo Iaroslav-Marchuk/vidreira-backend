@@ -1,6 +1,6 @@
 const allowedKeys = [
   'EP',
-  'cliente',
+  'client',
   'local.zona',
   'createdAt',
   'status',
@@ -28,10 +28,10 @@ export const sortOrders = (orders, sortBy = 'createdAt', sortOrder = 'asc') => {
 
   const sortedOrders = [...orders];
 
-  if (sortBy === 'cliente') {
+  if (sortBy === 'client') {
     return sortedOrders.sort((a, b) => {
-      const nameA = a.cliente?.name?.toLowerCase() || '';
-      const nameB = b.cliente?.name?.toLowerCase() || '';
+      const nameA = a.client?.name?.toLowerCase() || '';
+      const nameB = b.client?.name?.toLowerCase() || '';
       return sortOrder === 'asc'
         ? nameA.localeCompare(nameB)
         : nameB.localeCompare(nameA);

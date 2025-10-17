@@ -25,7 +25,7 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    cliente: {
+    client: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Clients',
       required: true,
@@ -44,6 +44,12 @@ const orderSchema = new mongoose.Schema(
       type: String,
       enum: ['Criado', 'Em produção', 'Concluído'],
       default: 'Criado',
+    },
+
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
 
     items: [itemSchema],

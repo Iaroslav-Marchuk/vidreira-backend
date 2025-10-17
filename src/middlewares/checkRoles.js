@@ -1,13 +1,15 @@
-import createHttpError from 'http-errors';
+// ----------------треба видалити--------
 
-export const checkRoles = (allowedRoles) => {
-  return (req, res, next) => {
-    const userRole = req.user.role;
+// import createHttpError from 'http-errors';
 
-    if (!allowedRoles.includes(userRole)) {
-      next(createHttpError(403, 'Access forbidden: insufficient role'));
-      return;
-    }
-    next();
-  };
-};
+// export const checkRoles = (allowedRoles) => {
+//   return (req, res, next) => {
+//     const userRole = req.user.role;
+
+//     if (!allowedRoles.includes(userRole)) {
+//       next(createHttpError(403, 'Access forbidden: insufficient role'));
+//       return;
+//     }
+//     next();
+//   };
+// };

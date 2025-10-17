@@ -2,7 +2,7 @@ import Joi from 'joi';
 
 export const createOrderSchema = Joi.object({
   EP: Joi.number().integer().positive().min(1).max(15000).required(),
-  cliente: Joi.string().required(),
+  client: Joi.string().required(),
   local: Joi.object({
     zona: Joi.string().valid('L1', 'L2', 'L3').required(),
   }),
@@ -24,7 +24,7 @@ export const createOrderSchema = Joi.object({
 
 export const mergeOrderSchema = Joi.object({
   EP: Joi.number().integer().positive().min(1).max(15000).required(),
-  cliente: Joi.string().required(),
+  client: Joi.string().required(),
   items: Joi.array()
     .items(
       Joi.object({
@@ -44,7 +44,7 @@ export const mergeOrderSchema = Joi.object({
 
 export const updateOrderSchema = Joi.object({
   EP: Joi.number().integer().positive().min(1).max(15000),
-  cliente: Joi.string(),
+  client: Joi.string(),
   local: Joi.object({
     zona: Joi.string().valid('L1', 'L2', 'L3'),
   }),
