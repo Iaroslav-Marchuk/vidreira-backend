@@ -34,7 +34,7 @@ const orderSchema = new mongoose.Schema(
       zona: {
         type: String,
         required: true,
-        enum: ['L1', 'L2', 'L3'],
+        enum: ['L1', 'L2', 'L3', 'Forno', 'Logística'],
       },
       operator: {
         type: String,

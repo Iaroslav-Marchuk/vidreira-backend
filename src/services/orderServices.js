@@ -66,7 +66,10 @@ export const getAllOrdersService = async ({
 };
 
 export const getOrderByIdService = async (orderId) => {
-  const order = await OrderModel.findById(orderId).populate('client');
+  const order = await OrderModel.findById(orderId)
+    .populate('client')
+    .populate('owner', 'name')
+    .lean();
   if (!order) {
     throw createHttpError(404, 'Order not found!');
   }
@@ -98,7 +101,7 @@ export const createOrderService = async (payload, userId) => {
 
   await logOrderHistory({
     orderId: newOrder._id,
-    action: 'Order Criado',
+    action: 'criou pedido',
     changedBy: userId,
     changes: {
       EP: newOrder.EP,
@@ -107,51 +110,27 @@ export const createOrderService = async (payload, userId) => {
     },
   });
 
+  for (const item of newOrder.items) {
+    await logOrderHistory({
+      orderId: newOrder._id,
+      itemId: item._id,
+      action: 'adicionou artigo no pedido',
+      changedBy: userId,
+      changes: {
+        category: item.category,
+        type: item.type,
+        temper: item.temper,
+        sizeX: item.sizeX,
+        sizeY: item.sizeY,
+        sizeZ: item.sizeZ,
+        quantity: item.quantity,
+        reason: item.reason,
+      },
+    });
+  }
+
   return { order: newOrder };
 };
-
-// export const mergeOrderService = async (payload, userId) => {
-//   let clientId = payload.client;
-//   if (typeof payload.client === 'string') {
-//     const client = await ClientModel.findOne({ name: payload.client });
-//     if (!client) throw createHttpError(400, 'Invalid client name');
-//     clientId = client._id;
-//   }
-
-//   const { exists, order } = await checkOrderExists(payload.EP, clientId);
-//   if (!exists) throw createHttpError(404, 'Order not found for merge');
-
-//   if (payload.items && payload.items.length > 0) {
-//     const itemsToAdd = payload.items.map((i) => ({
-//       ...i,
-//       status: 'Criado',
-//     }));
-//     order.items.push(...itemsToAdd);
-//   }
-
-//   await order.save();
-//   await order.populate('client');
-
-//   await logOrderHistory({
-//     orderId: order._id,
-//     action: 'Order corrigido',
-//     changedBy: userId,
-//     changes: {
-//       addedItemsCount: payload.items?.length || 0,
-//       addedItems: payload.items?.map((i) => ({
-//         category: i.category,
-//         type: i.type,
-//         temper: i.temper,
-//         sizeX: i.sizeX,
-//         sizeY: i.sizeY,
-//         sizeZ: i.sizeZ,
-//         quantity: i.quantity,
-//       })),
-//     },
-//   });
-
-//   return { merged: true, order };
-// };
 
 export const mergeOrderService = async (payload, userId) => {
   const { exists, order } = await checkOrderExists(payload.EP, payload.client);
@@ -170,7 +149,7 @@ export const mergeOrderService = async (payload, userId) => {
 
   await logOrderHistory({
     orderId: order._id,
-    action: 'Order corrigido',
+    action: 'adicionou artigo',
     changedBy: userId,
     changes: {
       addedItemsCount: payload.items.length || 0,
@@ -240,9 +219,19 @@ export const updateOrderService = async (orderId, payload, userId) => {
   }).populate('client');
 
   const changes = {};
+
   for (const key in setData) {
     if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
-      changes[key] = { old: oldOrder[key], new: updatedOrder[key] };
+      if (key === 'client') {
+        const oldClient = await ClientModel.findById(oldOrder.client);
+        const newClient = await ClientModel.findById(updatedOrder.client);
+        changes.client = {
+          old: oldClient?.name || oldOrder.client,
+          new: newClient?.name || updatedOrder.client,
+        };
+      } else {
+        changes[key] = { old: oldOrder[key], new: updatedOrder[key] };
+      }
     }
   }
 
@@ -262,7 +251,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
   if (Object.keys(changes).length > 0) {
     await logOrderHistory({
       orderId,
-      action: 'Order updated',
+      action: 'corregiu pedidio',
       changedBy: userId,
       changes,
     });
@@ -324,7 +313,8 @@ export const updateOrderItemService = async (
   if (Object.keys(changes).length > 0) {
     await logOrderHistory({
       orderId,
-      action: 'Artigo corrigido',
+      itemId,
+      action: 'corrigiu artigo',
       changedBy: userId,
       changes,
     });
@@ -351,7 +341,7 @@ export const deleteOrderItemService = async (orderId, itemId, userId) => {
   await logOrderHistory({
     orderId,
     itemId,
-    action: 'Artigo eliminado',
+    action: 'eliminou artigo',
     changedBy: userId,
     changes: {
       deletedItem: {
@@ -400,39 +390,39 @@ export const updateItemStatusService = async (
     { new: true },
   ).populate('client');
 
-  console.log('Updated order found:', updatedOrder);
-
   await logOrderHistory({
     orderId,
     itemId,
-    action: 'Estado mudado',
+    action: 'mudou estado do artigo',
     changedBy: userId,
     changes: {
       status: { old: oldItem.status, new: newStatus },
     },
   });
 
-  let newOrderStatus = updatedOrder.status;
   const itemStatuses = updatedOrder.items.map((i) => i.status);
+  const allDone = itemStatuses.every((s) => s === 'Concluído');
+  const anyInProduction = itemStatuses.some((s) => s === 'Em produção');
+  const currentOrderStatus = updatedOrder.status;
 
-  if (itemStatuses.every((s) => s === 'Concluído')) {
+  let newOrderStatus = currentOrderStatus;
+
+  if (allDone) {
     newOrderStatus = 'Concluído';
-  } else if (itemStatuses.some((s) => s === 'Em produção')) {
+  } else if (anyInProduction && currentOrderStatus !== 'Concluído') {
     newOrderStatus = 'Em produção';
-  } else {
-    newOrderStatus = 'Criado';
   }
 
-  if (newOrderStatus !== updatedOrder.status) {
+  if (newOrderStatus !== currentOrderStatus) {
     updatedOrder.status = newOrderStatus;
     await updatedOrder.save();
 
     await logOrderHistory({
       orderId,
-      action: 'Estado mudado',
+      action: 'mudou estado do pedido',
       changedBy: userId,
       changes: {
-        status: { old: order.status, new: newOrderStatus },
+        status: { old: currentOrderStatus, new: newOrderStatus },
       },
     });
   }
