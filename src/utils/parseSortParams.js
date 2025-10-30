@@ -3,6 +3,7 @@ const allowedKeys = [
   'client',
   'local.zona',
   'createdAt',
+  'updatedAt',
   'status',
   'falta',
 ];

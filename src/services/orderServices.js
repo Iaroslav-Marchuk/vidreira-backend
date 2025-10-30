@@ -26,7 +26,7 @@ export const getAllOrdersService = async ({
   );
 
   const pipeline = [
-    { $match: cleanFilter },
+    { $match: { ...cleanFilter, status: { $ne: 'Concluído' } } },
     {
       $lookup: {
         from: 'clients',

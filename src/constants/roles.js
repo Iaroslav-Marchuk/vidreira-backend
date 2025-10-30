@@ -15,7 +15,7 @@ export const ROLES = {
   },
 
   logistica: {
-    label: 'Logistica',
+    label: 'Logística',
     permissions: ['create', 'edit', 'delete'],
   },
 

@@ -5,7 +5,7 @@ export const getAllRolesController = (req, res) => {
 
   res.status(200).json({
     status: 200,
-    message: 'Succsessfully foud roles!',
+    message: 'Succsessfully found roles!',
     roles,
   });
 };

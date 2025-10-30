@@ -1,9 +1,10 @@
-import mongoose from 'mongoose';
+import { model, Schema } from 'mongoose';
 
-const sessionSchema = new mongoose.Schema(
+const sessionSchema = new Schema(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
+      ref: 'users',
       required: true,
     },
     accessToken: { type: String, required: true },
@@ -17,4 +18,4 @@ const sessionSchema = new mongoose.Schema(
   },
 );
 
-export const SessionModel = mongoose.model('Session', sessionSchema);
+export const SessionModel = model('Session', sessionSchema);

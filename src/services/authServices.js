@@ -7,7 +7,7 @@ import { SessionModel } from '../models/sessionModel.js';
 import { FIFTEEN_MINUTES, ONE_DAY } from '../constants/constants.js';
 
 export const registerUserService = async ({ name, role, password }) => {
-  const isExistUser = await UserModel.findOne({ name });
+  const isExistUser = await UserModel.findOne({ name: name.trim() });
 
   if (isExistUser) {
     throw new createHttpError.Conflict('Name is already in use');

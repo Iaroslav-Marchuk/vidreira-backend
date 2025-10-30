@@ -13,6 +13,7 @@ export const checkOrderExists = async (EP, client) => {
   const order = await OrderModel.findOne({
     EP,
     client: clientId,
+    status: { $ne: 'Concluído' },
   }).populate('client');
 
   if (!order) return { exists: false, clientId };
