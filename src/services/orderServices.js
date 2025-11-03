@@ -107,6 +107,7 @@ export const createOrderService = async (payload, userId) => {
       EP: newOrder.EP,
       client: newOrder.client,
       itemsCount: newOrder.items.length,
+      unitsCount: newOrder.items.reduce((sum, item) => sum + item.quantity, 0),
     },
   });
 
@@ -117,6 +118,7 @@ export const createOrderService = async (payload, userId) => {
       action: 'adicionou artigo no pedido',
       changedBy: userId,
       changes: {
+        EP: newOrder.EP,
         category: item.category,
         type: item.type,
         temper: item.temper,
@@ -136,8 +138,9 @@ export const mergeOrderService = async (payload, userId) => {
   const { exists, order } = await checkOrderExists(payload.EP, payload.client);
   if (!exists) throw createHttpError(404, 'Order not found for merge');
 
+  let itemsToAdd = [];
   if (payload.items && payload.items.length > 0) {
-    const itemsToAdd = payload.items.map((i) => ({
+    itemsToAdd = payload.items.map((i) => ({
       ...i,
       status: 'Criado',
     }));
@@ -152,6 +155,7 @@ export const mergeOrderService = async (payload, userId) => {
     action: 'adicionou artigo',
     changedBy: userId,
     changes: {
+      EP: order.EP,
       addedItemsCount: payload.items.length || 0,
       addedItems: payload.items.map((i) => ({
         category: i.category,
@@ -172,10 +176,16 @@ export const updateOrderService = async (orderId, payload, userId) => {
   const oldOrder = await OrderModel.findById(orderId);
   if (!oldOrder) throw createHttpError(404, 'Order not found');
 
-  if (payload.client && typeof payload.client === 'string') {
-    const client = await ClientModel.findOne({ name: payload.client });
-    if (!client) throw createHttpError(400, 'Invalid client name');
-    payload.client = client._id;
+  if (payload.client) {
+    if (typeof payload.client === 'string') {
+      const client = await ClientModel.findOne({ name: payload.client });
+      if (!client) throw createHttpError(400, 'Invalid client name');
+      payload.client = client._id;
+    } else if (typeof payload.client === 'object' && payload.client._id) {
+      payload.client = payload.client._id;
+    } else {
+      throw createHttpError(400, 'Invalid client data');
+    }
   }
 
   const isItemsInWork = oldOrder.items.some(
@@ -221,15 +231,21 @@ export const updateOrderService = async (orderId, payload, userId) => {
   const changes = {};
 
   for (const key in setData) {
-    if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
-      if (key === 'client') {
-        const oldClient = await ClientModel.findById(oldOrder.client);
-        const newClient = await ClientModel.findById(updatedOrder.client);
+    if (key === 'client') {
+      const oldClientId =
+        oldOrder.client?._id?.toString() || oldOrder.client?.toString();
+      const newClientId =
+        updatedOrder.client?._id?.toString() || updatedOrder.client?.toString();
+      if (oldClientId !== newClientId) {
+        const oldClient = await ClientModel.findById(oldClientId);
+        const newClient = await ClientModel.findById(newClientId);
         changes.client = {
-          old: oldClient?.name || oldOrder.client,
-          new: newClient?.name || updatedOrder.client,
+          old: oldClient?.name || oldClientId,
+          new: newClient?.name || newClientId,
         };
-      } else {
+      }
+    } else {
+      if (JSON.stringify(oldOrder[key]) !== JSON.stringify(updatedOrder[key])) {
         changes[key] = { old: oldOrder[key], new: updatedOrder[key] };
       }
     }
@@ -251,9 +267,12 @@ export const updateOrderService = async (orderId, payload, userId) => {
   if (Object.keys(changes).length > 0) {
     await logOrderHistory({
       orderId,
-      action: 'corregiu pedidio',
+      action: 'corrigiu pedido',
       changedBy: userId,
-      changes,
+      changes: {
+        displayEP: updatedOrder.EP,
+        ...changes,
+      },
     });
   }
 
@@ -310,25 +329,47 @@ export const updateOrderItemService = async (
     }
   }
 
+  if (!('category' in changes)) {
+    changes.category = oldItem.category;
+  }
+  if (!('type' in changes)) {
+    changes.type = oldItem.type;
+  }
+
   if (Object.keys(changes).length > 0) {
     await logOrderHistory({
       orderId,
       itemId,
       action: 'corrigiu artigo',
       changedBy: userId,
-      changes,
+      changes: {
+        EP: oldOrder.EP,
+        ...changes,
+      },
     });
   }
 
   return updatedOrder;
 };
 
-export const deleteOrderService = async (orderId) => {
-  const deletedOrder = await OrderModel.findOneAndDelete({ _id: orderId });
-  if (!deletedOrder) {
+export const deleteOrderService = async (orderId, userId) => {
+  const orderToDelete = await OrderModel.findById(orderId);
+  if (!orderToDelete) {
     throw createHttpError(404, 'Order not found!');
   }
-  return deletedOrder;
+
+  await logOrderHistory({
+    orderId: orderToDelete._id,
+    action: 'eliminou pedido',
+    changedBy: userId,
+    changes: {
+      EP: orderToDelete.EP,
+    },
+  });
+
+  await OrderModel.findOneAndDelete({ _id: orderId });
+
+  return orderToDelete;
 };
 
 export const deleteOrderItemService = async (orderId, itemId, userId) => {
@@ -344,6 +385,7 @@ export const deleteOrderItemService = async (orderId, itemId, userId) => {
     action: 'eliminou artigo',
     changedBy: userId,
     changes: {
+      EP: order.EP,
       deletedItem: {
         category: deletedItem.category,
         type: deletedItem.type,
@@ -396,6 +438,7 @@ export const updateItemStatusService = async (
     action: 'mudou estado do artigo',
     changedBy: userId,
     changes: {
+      EP: order.EP,
       status: { old: oldItem.status, new: newStatus },
     },
   });
@@ -422,6 +465,7 @@ export const updateItemStatusService = async (
       action: 'mudou estado do pedido',
       changedBy: userId,
       changes: {
+        EP: order.EP,
         status: { old: currentOrderStatus, new: newOrderStatus },
       },
     });

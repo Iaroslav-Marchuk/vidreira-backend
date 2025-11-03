@@ -10,6 +10,27 @@ export const glassOptions = {
     },
   },
 
+  colorido: {
+    label: 'Colorido',
+    types: {
+      vfb: {
+        label: 'VFBronze',
+        thickness: [4, 5, 6, 8, 10],
+        temper: 'both',
+      },
+      vfv: {
+        label: 'VFVerde',
+        thickness: [4, 5, 6, 8, 10],
+        temper: 'both',
+      },
+      vfg: {
+        label: 'VFGris',
+        thickness: [4, 5, 6, 8, 10],
+        temper: 'both',
+      },
+    },
+  },
+
   impresso: {
     label: 'Impresso',
     types: {
@@ -32,27 +53,6 @@ export const glassOptions = {
       fosco: {
         label: 'Novoglass',
         thickness: [4, 5, 6, 8],
-        temper: 'both',
-      },
-    },
-  },
-
-  colorido: {
-    label: 'Colorido',
-    types: {
-      vfb: {
-        label: 'VFBronze',
-        thickness: [4, 5, 6, 8, 10],
-        temper: 'both',
-      },
-      vfv: {
-        label: 'VFVerde',
-        thickness: [4, 5, 6, 8, 10],
-        temper: 'both',
-      },
-      vfg: {
-        label: 'VFGris',
-        thickness: [4, 5, 6, 8, 10],
         temper: 'both',
       },
     },

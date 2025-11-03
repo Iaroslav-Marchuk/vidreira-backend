@@ -5,7 +5,7 @@ const orderHistorySchema = new mongoose.Schema(
     orderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Orders',
-      required: true,
+      required: false,
     },
     itemId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -15,7 +15,8 @@ const orderHistorySchema = new mongoose.Schema(
       type: String,
       enum: [
         'criou pedido',
-        'corregiu pedidio',
+        'corrigiu pedido',
+        'eliminou pedido',
         'adicionou artigo',
         'adicionou artigo no pedido',
         'corrigiu artigo',

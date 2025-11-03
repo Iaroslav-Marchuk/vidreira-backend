@@ -111,7 +111,8 @@ export const updateOrderItemController = async (req, res, next) => {
 
 export const deleteOrderController = async (req, res, next) => {
   const { orderId } = req.params;
-  await deleteOrderService(orderId);
+  const userId = req.user._id;
+  await deleteOrderService(orderId, userId);
   res.json({
     status: 200,
     message: 'Order deleted successfully!',

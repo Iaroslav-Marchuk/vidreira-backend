@@ -10,3 +10,17 @@ export const getOrderHistoryService = async (orderId) => {
 
   return history;
 };
+
+export const getUserHistoryService = async (userId) => {
+  const userHistory = await OrderHistoryModel.find({ changedBy: userId })
+    .populate('changedBy', 'name')
+    // .populate('orderId', 'EP')
+    .populate({
+      path: 'orderId',
+      select: 'EP',
+      options: { strictPopulate: false },
+    })
+    .sort({ changedAt: -1 })
+    .lean();
+  return userHistory;
+};
