@@ -14,7 +14,6 @@ export const getOrderHistoryService = async (orderId) => {
 export const getUserHistoryService = async (userId) => {
   const userHistory = await OrderHistoryModel.find({ changedBy: userId })
     .populate('changedBy', 'name')
-    // .populate('orderId', 'EP')
     .populate({
       path: 'orderId',
       select: 'EP',
