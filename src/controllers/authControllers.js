@@ -25,6 +25,7 @@ export const loginUserController = async (req, res) => {
     expires: session.refreshTokenValidUntil,
     sameSite: 'None',
     secure: true,
+    path: '/',
   });
 
   res.cookie('sessionId', session._id, {
@@ -32,6 +33,7 @@ export const loginUserController = async (req, res) => {
     expires: session.refreshTokenValidUntil,
     sameSite: 'None',
     secure: true,
+    path: '/',
   });
 
   res.json({
@@ -45,8 +47,12 @@ export const logoutUserController = async (req, res) => {
   if (req.cookies.sessionId) {
     await logoutUserService(req.cookies.sessionId);
   }
-  res.clearCookie('sessionId', { sameSite: 'None', secure: true });
-  res.clearCookie('refreshToken', { sameSite: 'None', secure: true });
+  res.clearCookie('sessionId', { sameSite: 'None', secure: true, path: '/' });
+  res.clearCookie('refreshToken', {
+    sameSite: 'None',
+    secure: true,
+    path: '/',
+  });
 
   res.status(204).send();
 };
@@ -57,6 +63,7 @@ const createSessionController = (res, session) => {
     expires: new Date(Date.now() + ONE_DAY),
     sameSite: 'None',
     secure: true,
+    path: '/',
   });
 
   res.cookie('sessionId', session._id, {
@@ -64,6 +71,7 @@ const createSessionController = (res, session) => {
     expires: new Date(Date.now() + ONE_DAY),
     sameSite: 'None',
     secure: true,
+    path: '/',
   });
 };
 

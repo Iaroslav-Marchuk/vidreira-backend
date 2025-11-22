@@ -8,7 +8,8 @@ import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
 import cookieParser from 'cookie-parser';
 
-const allowedOrigin = 'http://localhost:5173'; //---------------змінити адресу після деплою
+// const allowedOrigin = 'http://localhost:5173';
+const allowedOrigin = 'https://vidreira-algarvia.vercel.app';
 const app = express();
 
 app.use(express.json());
