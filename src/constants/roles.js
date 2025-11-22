@@ -1,31 +1,25 @@
 export const ROLES = {
-  duplo: {
-    label: 'Duplo',
-    permissions: ['create', 'edit', 'delete', 'changeStatus:Concluído'],
+  PRODUCTION: {
+    permissions: ['create', 'edit', 'delete', 'changeStatus:FINISHED'],
   },
 
-  corte: {
-    label: 'Corte',
-    permissions: ['changeStatus:Em produção'],
+  CUTTING: {
+    permissions: ['changeStatus:IN_PROGRESS'],
   },
 
-  forno: {
-    label: 'Forno',
+  TEMPERING: {
     permissions: ['create', 'edit', 'delete'],
   },
 
-  logistica: {
-    label: 'Logística',
+  LOGISTIC: {
     permissions: ['create', 'edit', 'delete'],
   },
 
-  qualidade: {
-    label: 'Qualidade',
+  QUALITY: {
     permissions: ['create', 'edit', 'delete'],
   },
 
-  visitante: {
-    label: 'Visitante',
+  GUEST: {
     permissions: [],
   },
 };

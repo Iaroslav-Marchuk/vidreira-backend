@@ -15,20 +15,20 @@ export const checkDeletableStatus = async (req, res, next) => {
       return next(createHttpError(404, 'Item not found'));
     }
 
-    if (item.status === 'Em produção' || item.status === 'Concluído') {
+    if (item.status === 'IN_PROGRESS' || item.status === 'FINISHED') {
       return next(
         createHttpError(
           403,
-          'You can’t delete an item with status "Em produção" or "Concluído"',
+          'You can’t delete an item with status "In progress" or "Finished"',
         ),
       );
     }
   } else {
-    if (order.status === 'Em produção' || order.status === 'Concluído') {
+    if (order.status === 'IN_PROGRESS' || order.status === 'FINISHED') {
       return next(
         createHttpError(
           403,
-          'You can’t delete an order with status "Em produção" or "Concluído"',
+          'You can’t delete an order with status "In progress" or "Finished"',
         ),
       );
     }

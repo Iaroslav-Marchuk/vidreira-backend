@@ -17,17 +17,16 @@ export const getStatsService = async () => {
   }
 
   const allItems = allOrders.flatMap((order) => order.items);
-
-  const completedOrders = allOrders.filter((o) => o.status === 'Concluído');
-  const completedItems = allItems.filter((item) => item.status === 'Concluído');
+  const completedOrders = allOrders.filter((o) => o.status === 'FINISHED');
+  const completedItems = allItems.filter((item) => item.status === 'FINISHED');
 
   const noCompletedOrdersTotal = () => {
-    return allOrders.filter((o) => o.status !== 'Concluído').length;
+    return allOrders.filter((o) => o.status !== 'FINISHED').length;
   };
 
   const noCompletedItemsTotal = () => {
     return allItems
-      .filter((item) => item.status !== 'Concluído')
+      .filter((item) => item.status !== 'FINISHED')
       .reduce((sum, item) => sum + item.quantity, 0);
   };
 
@@ -80,7 +79,7 @@ export const getStatsService = async () => {
 
     const todayOrders = allOrders.filter((order) =>
       order.items.some((item) => {
-        if (item.status !== 'Concluído') return false;
+        if (item.status !== 'FINISHED') return false;
         const date = new Date(item.updatedAt);
         return (
           date.getDate() === thisDay &&
@@ -93,14 +92,14 @@ export const getStatsService = async () => {
     todayOrders.forEach((order) => {
       const totalItems = order.items.reduce((sum, i) => sum + i.quantity, 0);
       const completedItems = order.items
-        .filter((i) => i.status === 'Concluído')
+        .filter((i) => i.status === 'FINISHED')
         .reduce((sum, i) => sum + i.quantity, 0);
       const pendingItems = totalItems - completedItems;
 
       if (pendingItems > 0) {
         results.push({
           EP: order.EP,
-          client: order.client?.name || 'Sem nome',
+          client: order.client?.name,
           totalItems,
           completedItems,
           pendingItems,
@@ -223,7 +222,7 @@ export const getStatsService = async () => {
 
   const activeOrdersByZone = () =>
     allOrders
-      .filter((order) => order.status !== 'Concluído')
+      .filter((order) => order.status !== 'FINISHED')
       .reduce((acc, o) => {
         const zona = o.local.zona;
         acc[zona] = (acc[zona] || 0) + 1;
@@ -232,19 +231,19 @@ export const getStatsService = async () => {
 
   const activeItemsByZone = () =>
     allOrders
-      .filter((o) => o.status !== 'Concluído')
+      .filter((o) => o.status !== 'FINISHED')
       .reduce((acc, o) => {
         const zona = o.local.zona;
         const totalItemsInOrder = o.items
-          .filter((item) => item.status !== 'Concluído')
+          .filter((item) => item.status !== 'FINISHED')
           .reduce((sum, item) => sum + item.quantity, 0);
 
         acc[zona] = (acc[zona] || 0) + totalItemsInOrder;
         return acc;
       }, {});
 
-  const overdues = () => {
-    const pendingOrders = allOrders.filter((o) => o.status !== 'Concluído');
+  const delayed = () => {
+    const pendingOrders = allOrders.filter((o) => o.status !== 'FINISHED');
 
     if (pendingOrders.length === 0) return [];
 
@@ -297,7 +296,7 @@ export const getStatsService = async () => {
     activeItemsByZone: activeItemsByZone(),
 
     averageItemExecutionTime,
-    overdues: overdues(),
+    delayed: delayed(),
   };
 
   return stats;

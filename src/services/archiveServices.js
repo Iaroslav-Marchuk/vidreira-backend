@@ -19,7 +19,7 @@ export const getArchiveService = async ({
   );
 
   const pipeline = [
-    { $match: { ...cleanFilter, status: 'Concluído' } },
+    { $match: { ...cleanFilter, status: 'FINISHED' } },
     {
       $lookup: {
         from: 'clients',
@@ -43,7 +43,7 @@ export const getArchiveService = async ({
 
   orders = orders.map((order) => {
     const falta = (order.items || [])
-      .filter((item) => item.status !== 'Concluído')
+      .filter((item) => item.status !== 'FINISHED')
       .reduce((total, item) => total + Number(item.quantity || 0), 0);
 
     return { ...order, falta };

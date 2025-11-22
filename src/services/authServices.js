@@ -4,7 +4,7 @@ import { randomBytes } from 'crypto';
 
 import { UserModel } from '../models/userModel.js';
 import { SessionModel } from '../models/sessionModel.js';
-import { FIFTEEN_MINUTES, ONE_DAY } from '../constants/constants.js';
+import { ONE_DAY, THIRTY_MINUTES } from '../constants/constants.js';
 
 export const registerUserService = async ({ name, role, password }) => {
   const isExistUser = await UserModel.findOne({ name: name.trim() });
@@ -38,7 +38,7 @@ export const loginUserService = async ({ name, password }) => {
     userId: user._id,
     accessToken,
     refreshToken,
-    accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
+    accessTokenValidUntil: new Date(Date.now() + THIRTY_MINUTES),
     refreshTokenValidUntil: new Date(Date.now() + ONE_DAY),
   });
 };
@@ -70,7 +70,7 @@ export const refreshSessionService = async ({ sessionId, refreshToken }) => {
     userId: session.userId,
     accessToken: newAccessToken,
     refreshToken: newRefreshToken,
-    accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
+    accessTokenValidUntil: new Date(Date.now() + THIRTY_MINUTES),
     refreshTokenValidUntil: new Date(Date.now() + ONE_DAY),
   });
 };

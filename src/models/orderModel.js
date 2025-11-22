@@ -12,8 +12,8 @@ const itemSchema = new mongoose.Schema(
     reason: { type: String, required: true },
     status: {
       type: String,
-      enum: ['Criado', 'Em produção', 'Concluído'],
-      default: 'Criado',
+      enum: ['CREATED', 'IN_PROGRESS', 'FINISHED'],
+      default: 'CREATED',
     },
   },
   { timestamps: true },
@@ -34,7 +34,7 @@ const orderSchema = new mongoose.Schema(
       zona: {
         type: String,
         required: true,
-        enum: ['L1', 'L2', 'L3', 'Forno', 'Logística'],
+        enum: ['LINE_1', 'LINE_2', 'LINE_3', 'FURNACE', 'LOGISTIC', 'QUALITY'],
       },
       operator: {
         type: String,
@@ -42,8 +42,8 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Criado', 'Em produção', 'Concluído'],
-      default: 'Criado',
+      enum: ['CREATED', 'IN_PROGRESS', 'FINISHED'],
+      default: 'CREATED',
     },
 
     owner: {

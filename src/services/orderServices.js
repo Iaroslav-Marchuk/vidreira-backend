@@ -26,7 +26,7 @@ export const getAllOrdersService = async ({
   );
 
   const pipeline = [
-    { $match: { ...cleanFilter, status: { $ne: 'Concluído' } } },
+    { $match: { ...cleanFilter, status: { $ne: 'FINISHED' } } },
     {
       $lookup: {
         from: 'clients',
@@ -50,7 +50,7 @@ export const getAllOrdersService = async ({
 
   orders = orders.map((order) => {
     const falta = (order.items || [])
-      .filter((item) => item.status !== 'Concluído')
+      .filter((item) => item.status !== 'FINISHED')
       .reduce((total, item) => total + Number(item.quantity || 0), 0);
 
     return { ...order, falta };
@@ -101,7 +101,7 @@ export const createOrderService = async (payload, userId) => {
 
   await logOrderHistory({
     orderId: newOrder._id,
-    action: 'criou pedido',
+    action: 'ORDER_CREATED',
     changedBy: userId,
     changes: {
       EP: newOrder.EP,
@@ -115,7 +115,7 @@ export const createOrderService = async (payload, userId) => {
     await logOrderHistory({
       orderId: newOrder._id,
       itemId: item._id,
-      action: 'adicionou artigo no pedido',
+      action: 'ITEM_ADDED_TO_ORDER',
       changedBy: userId,
       changes: {
         EP: newOrder.EP,
@@ -142,7 +142,7 @@ export const mergeOrderService = async (payload, userId) => {
   if (payload.items && payload.items.length > 0) {
     itemsToAdd = payload.items.map((i) => ({
       ...i,
-      status: 'Criado',
+      status: 'CREATED',
     }));
     order.items.push(...itemsToAdd);
   }
@@ -152,7 +152,7 @@ export const mergeOrderService = async (payload, userId) => {
 
   await logOrderHistory({
     orderId: order._id,
-    action: 'adicionou artigo',
+    action: 'ITEM_ADDED',
     changedBy: userId,
     changes: {
       EP: order.EP,
@@ -189,13 +189,13 @@ export const updateOrderService = async (orderId, payload, userId) => {
   }
 
   const isItemsInWork = oldOrder.items.some(
-    (item) => item.status === 'Em produção' || item.status === 'Concluído',
+    (item) => item.status === 'IN_PROGRESS' || item.status === 'FINISHED',
   );
 
   if (isItemsInWork && payload.items) {
     throw createHttpError(
       403,
-      "Can't edit order with item status 'Em produção' or 'Concluído'",
+      "Can't edit order with item status 'In progress' or 'Finished'",
     );
   }
 
@@ -219,7 +219,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
   ) {
     const itemsToAdd = payload.items.map((i) => ({
       ...i,
-      status: 'Criado',
+      status: 'CREATED',
     }));
     updateOps.$push = { items: { $each: itemsToAdd } };
   }
@@ -267,7 +267,7 @@ export const updateOrderService = async (orderId, payload, userId) => {
   if (Object.keys(changes).length > 0) {
     await logOrderHistory({
       orderId,
-      action: 'corrigiu pedido',
+      action: 'ORDER_EDITED',
       changedBy: userId,
       changes: {
         displayEP: updatedOrder.EP,
@@ -291,8 +291,8 @@ export const updateOrderItemService = async (
   const oldItem = oldOrder.items.find((i) => i._id.toString() === itemId);
   if (!oldItem) throw createHttpError(404, 'Item not found');
 
-  if (oldItem.status === 'Em produção') {
-    throw createHttpError(403, "Can't edit item with status 'Em produção'");
+  if (oldItem.status === 'IN_PROGRESS') {
+    throw createHttpError(403, "Can't edit item with status 'In progress'");
   }
 
   const allowedFields = [
@@ -340,7 +340,7 @@ export const updateOrderItemService = async (
     await logOrderHistory({
       orderId,
       itemId,
-      action: 'corrigiu artigo',
+      action: 'ITEM_EDITED',
       changedBy: userId,
       changes: {
         EP: oldOrder.EP,
@@ -360,7 +360,7 @@ export const deleteOrderService = async (orderId, userId) => {
 
   await logOrderHistory({
     orderId: orderToDelete._id,
-    action: 'eliminou pedido',
+    action: 'ORDER_DELETED',
     changedBy: userId,
     changes: {
       EP: orderToDelete.EP,
@@ -382,7 +382,7 @@ export const deleteOrderItemService = async (orderId, itemId, userId) => {
   await logOrderHistory({
     orderId,
     itemId,
-    action: 'eliminou artigo',
+    action: 'ITEM_DELETED',
     changedBy: userId,
     changes: {
       EP: order.EP,
@@ -435,7 +435,7 @@ export const updateItemStatusService = async (
   await logOrderHistory({
     orderId,
     itemId,
-    action: 'mudou estado do artigo',
+    action: 'STATUS_OF_ITEM_CHANGED',
     changedBy: userId,
     changes: {
       EP: order.EP,
@@ -444,16 +444,16 @@ export const updateItemStatusService = async (
   });
 
   const itemStatuses = updatedOrder.items.map((i) => i.status);
-  const allDone = itemStatuses.every((s) => s === 'Concluído');
-  const anyInProduction = itemStatuses.some((s) => s === 'Em produção');
+  const allDone = itemStatuses.every((s) => s === 'FINISHED');
+  const anyInProduction = itemStatuses.some((s) => s === 'IN_PROGRESS');
   const currentOrderStatus = updatedOrder.status;
 
   let newOrderStatus = currentOrderStatus;
 
   if (allDone) {
-    newOrderStatus = 'Concluído';
-  } else if (anyInProduction && currentOrderStatus !== 'Concluído') {
-    newOrderStatus = 'Em produção';
+    newOrderStatus = 'FINISHED';
+  } else if (anyInProduction && currentOrderStatus !== 'FINISHED') {
+    newOrderStatus = 'IN_PROGRESS';
   }
 
   if (newOrderStatus !== currentOrderStatus) {
@@ -462,7 +462,7 @@ export const updateItemStatusService = async (
 
     await logOrderHistory({
       orderId,
-      action: 'mudou estado do pedido',
+      action: 'STATUS_OF_ORDER_CHANGED',
       changedBy: userId,
       changes: {
         EP: order.EP,
